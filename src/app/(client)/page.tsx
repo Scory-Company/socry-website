@@ -19,6 +19,8 @@ import HowItWorks from "@/components/client/HowItWorks";
 import SocialProof from "@/components/client/SocialProof";
 import TrendingArticles from "@/components/client/TrendingArticles";
 import Footer from "@/components/client/Footer";
+import StrategicPartners from "@/components/client/StrategicPartners";
+import FAQ from "@/components/client/FAQ";
 import { getMostPopularArticles } from "@/data/mock/articles";
 
 export default function Home() {
@@ -144,6 +146,10 @@ export default function Home() {
         <div id="social-proof">
            <SocialProof/>
         </div>
+
+        <StrategicPartners />
+        
+        <FAQ />
       </main>
 
       <Footer />

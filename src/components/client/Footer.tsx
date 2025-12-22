@@ -9,7 +9,6 @@ import {
   IconBrandLinkedin, 
   IconBrandYoutube 
 } from "@tabler/icons-react";
-import { motion } from "framer-motion";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -51,7 +50,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative bg-background pt-20 pb-10 border-t border-border mt-20 font-sans">
+    <footer className="relative bg-background pt-20 pb-10 border-t border-border font-sans">
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-16">
           

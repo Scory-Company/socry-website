@@ -1,6 +1,10 @@
-"use client"
-
-import { Home, Search, BookOpen, Star, Bookmark, FileText, Trophy, Flame, Target, Award, TrendingUp, Clock, CheckCircle2, Filter, LogOut } from "lucide-react"
+import { useEffect, useState } from "react"
+import { 
+  Home, Search, BookOpen, Star, Bookmark, FileText, Trophy, Flame, Target, Award, 
+  TrendingUp, Clock, CheckCircle2, Filter, LogOut, Hash, LayoutGrid, Stethoscope, 
+  Microscope, Brain, Zap, Leaf, FlaskConical, Atom, Globe, ScrollText, Calculator, Palette,
+  ChevronDown, ChevronUp, Briefcase, Scale, GraduationCap, Music, Film, Utensils, Code, Banknote
+} from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -18,25 +22,51 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { authService } from "@/services"
 import { toast } from "sonner"
-
-// Categories list - Reduced to top 5
-const CATEGORIES = [
-  { name: "All Categories", icon: Filter },
-  { name: "Sports Science", icon: Trophy },
-  { name: "Machine Learning", icon: Target },
-  { name: "Medical Research", icon: BookOpen },
-  { name: "Biotechnology", icon: Star },
-]
+import { categoriesApi, type CategoryResponse } from "@/services/categories.service" 
 
 interface SearchSidebarProps {
   selectedCategory: string
   onSelectCategory: (category: string) => void
 }
 
+// Icon mapping helper
+const getCategoryIcon = (name: string) => {
+  const lowerName = name.toLowerCase()
+  if (lowerName.includes("sport") || lowerName.includes("fitness")) return Trophy
+  if (lowerName.includes("machine") || lowerName.includes("ai") || lowerName.includes("intelligence") || lowerName.includes("robot")) return Brain
+  if (lowerName.includes("medic") || lowerName.includes("health") || lowerName.includes("doctor")) return Stethoscope
+  if (lowerName.includes("bio")) return Microscope
+  if (lowerName.includes("tech") || lowerName.includes("computer") || lowerName.includes("cyber")) return Zap
+  if (lowerName.includes("environment") || lowerName.includes("nature") || lowerName.includes("eco")) return Leaf
+  if (lowerName.includes("chem")) return FlaskConical
+  if (lowerName.includes("phy") || lowerName.includes("astronomy") || lowerName.includes("space")) return Atom
+  if (lowerName.includes("geo") || lowerName.includes("earth") || lowerName.includes("map")) return Globe
+  if (lowerName.includes("hist") || lowerName.includes("ancient") || lowerName.includes("past")) return ScrollText
+  if (lowerName.includes("math") || lowerName.includes("algebra") || lowerName.includes("stat")) return Calculator
+  if (lowerName.includes("art") || lowerName.includes("design") || lowerName.includes("culture")) return Palette
+  
+  // Finance specific
+  if (lowerName.includes("financ") || lowerName.includes("money") || lowerName.includes("econ") || lowerName.includes("tax") || lowerName.includes("wealth")) return Banknote
+  
+  if (lowerName.includes("business") || lowerName.includes("market") || lowerName.includes("startup")) return Briefcase
+  if (lowerName.includes("law") || lowerName.includes("legal") || lowerName.includes("politic")) return Scale
+  if (lowerName.includes("edu") || lowerName.includes("teach") || lowerName.includes("learn") || lowerName.includes("school")) return GraduationCap
+  if (lowerName.includes("music") || lowerName.includes("audio")) return Music
+  if (lowerName.includes("film") || lowerName.includes("movie") || lowerName.includes("video")) return Film
+  if (lowerName.includes("food") || lowerName.includes("nutri") || lowerName.includes("cook")) return Utensils
+  if (lowerName.includes("code") || lowerName.includes("dev") || lowerName.includes("program") || lowerName.includes("software")) return Code
+  
+  return BookOpen
+}
+
 import Image from "next/image"
 import logo from "@/assets/logo.png"
 
 export default function SearchSidebar({ selectedCategory, onSelectCategory }: SearchSidebarProps) {
+  const [categories, setCategories] = useState<CategoryResponse[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
+
   // Mock gamification data
   const userLevel = 12
   const userXP = 750
@@ -46,6 +76,24 @@ export default function SearchSidebar({ selectedCategory, onSelectCategory }: Se
   const weeklyGoal = 10
   const weeklyProgress = 7
   const weeklyProgressPercent = (weeklyProgress / weeklyGoal) * 100
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoriesApi.getAll()
+        if (response.data && response.data.success) {
+          setCategories(response.data.data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error)
+        // toast.error("Failed to load categories")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   return (
     <Sidebar collapsible="icon" variant="floating">
@@ -120,23 +168,66 @@ export default function SearchSidebar({ selectedCategory, onSelectCategory }: Se
           <SidebarGroupLabel>Categories</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {CATEGORIES.map((category) => {
-                const Icon = category.icon
-                const isActive = selectedCategory === category.name || (selectedCategory === "All" && category.name === "All Categories")
-                
-                return (
-                  <SidebarMenuItem key={category.name}>
-                    <SidebarMenuButton 
-                      onClick={() => onSelectCategory(category.name === "All Categories" ? "All" : category.name)}
-                      isActive={isActive}
-                      tooltip={category.name}
-                    >
-                      <Icon className="size-4" />
-                      <span>{category.name}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+               {/* Fixed "All Categories" Item */}
+               <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => onSelectCategory("All")}
+                    isActive={selectedCategory === "All"}
+                    tooltip="All Categories"
+                  >
+                    <Filter className="size-4" />
+                    <span>All Categories</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+               {/* Dynamic Categories */}
+               {isLoading ? (
+                  // Skeleton loading state
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <SidebarMenuItem key={i}>
+                      <SidebarMenuButton disabled>
+                        <div className="size-4 rounded-full bg-muted animate-pulse" />
+                        <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                ) : (
+                  <>
+                    {categories.slice(0, isExpanded ? undefined : 3).map((category) => {
+                     const Icon = getCategoryIcon(category.name)
+                     const isActive = selectedCategory === category.name
+                     
+                     return (
+                       <SidebarMenuItem key={category.id}>
+                         <SidebarMenuButton 
+                           onClick={() => onSelectCategory(category.name)}
+                           isActive={isActive}
+                           tooltip={category.name}
+                         >
+                           <Icon className="size-4" />
+                           <span>{category.name}</span>
+                         </SidebarMenuButton>
+                       </SidebarMenuItem>
+                     )
+                   })}
+ 
+                   {categories.length > 3 && (
+                     <SidebarMenuItem>
+                       <SidebarMenuButton 
+                         onClick={() => setIsExpanded(!isExpanded)}
+                         className="text-muted-foreground hover:text-foreground"
+                       >
+                         {isExpanded ? (
+                           <ChevronUp className="size-4" />
+                         ) : (
+                           <ChevronDown className="size-4" />
+                         )}
+                         <span>{isExpanded ? "Show Less" : "See All"}</span>
+                       </SidebarMenuButton>
+                     </SidebarMenuItem>
+                   )}
+                  </>
+                )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
