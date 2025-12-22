@@ -1,11 +1,19 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Search, Star, StarHalf, Sparkles, BookOpen, Zap, Moon, Sun } from "lucide-react"
 import { useTheme } from "@/components/providers/ThemeProvider"
 import { motion } from "framer-motion"
+import LoginDialog from "@/components/client/LoginDialog"
+import { toast } from "sonner"
 
 export default function HeroSection() {
   const { theme, toggleTheme } = useTheme()
+  const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -20,6 +28,49 @@ export default function HeroSection() {
       opacity: 1,
       y: 0,
     },
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!searchQuery.trim()) {
+      toast.error("Please enter a search query", {
+        description: "Search field cannot be empty",
+      })
+      return
+    }
+
+    if (!isAuthenticated) {
+      setIsLoginDialogOpen(true)
+      return
+    }
+
+    // Navigate to search results page
+    router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+  }
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true)
+    toast.success("Login successful!", {
+      description: "Welcome back! Now performing your search...",
+    })
+
+    // Navigate to search results after successful login
+    setTimeout(() => {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+    }, 500)
+  }
+
+  const handlePopularSearch = (query: string) => {
+    setSearchQuery(query)
+
+    if (!isAuthenticated) {
+      setIsLoginDialogOpen(true)
+      return
+    }
+
+    // Navigate to search results page
+    router.push(`/search?q=${encodeURIComponent(query)}`)
   }
 
   return (
@@ -108,30 +159,47 @@ export default function HeroSection() {
 
             {/* Search Bar - More Prominent */}
             <motion.div className="relative max-w-2xl" variants={itemVariants} transition={{ duration: 0.7 }}>
-              <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2 bg-card border-2 border-primary/30 rounded-2xl shadow-lg hover:border-primary/50 transition-all focus-within:border-primary focus-within:shadow-xl">
+              <form onSubmit={handleSearch} className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2 bg-card border-2 border-primary/30 rounded-2xl shadow-lg hover:border-primary/50 transition-all focus-within:border-primary focus-within:shadow-xl">
                 <div className="hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl shrink-0">
                   <Search className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for scientific articles..."
                   className="flex-1 px-3 py-2.5 sm:px-2 sm:py-3 bg-transparent text-sm sm:text-base focus:outline-none placeholder:text-muted-foreground"
                 />
-                <button className="px-4 py-2.5 sm:px-6 sm:py-3 bg-primary hover:bg-primary-dark-shade text-primary-foreground font-semibold rounded-xl transition-all hover:scale-105 whitespace-nowrap text-sm sm:text-base">
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 sm:px-6 sm:py-3 bg-primary hover:bg-primary-dark-shade text-primary-foreground font-semibold rounded-xl transition-all hover:scale-105 whitespace-nowrap text-sm sm:text-base"
+                >
                   Search
                 </button>
-              </div>
+              </form>
 
               {/* Popular searches hint */}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <span className="font-medium">Popular:</span>
-                <button className="px-2.5 py-1 sm:px-3 sm:py-1 bg-muted/50 hover:bg-muted rounded-full transition-colors">
+                <button
+                  type="button"
+                  onClick={() => handlePopularSearch("Machine Learning")}
+                  className="px-2.5 py-1 sm:px-3 sm:py-1 bg-muted/50 hover:bg-muted rounded-full transition-colors"
+                >
                   Machine Learning
                 </button>
-                <button className="px-2.5 py-1 sm:px-3 sm:py-1 bg-muted/50 hover:bg-muted rounded-full transition-colors">
+                <button
+                  type="button"
+                  onClick={() => handlePopularSearch("Climate Change")}
+                  className="px-2.5 py-1 sm:px-3 sm:py-1 bg-muted/50 hover:bg-muted rounded-full transition-colors"
+                >
                   Climate Change
                 </button>
-                <button className="px-2.5 py-1 sm:px-3 sm:py-1 bg-muted/50 hover:bg-muted rounded-full transition-colors">
+                <button
+                  type="button"
+                  onClick={() => handlePopularSearch("Biotechnology")}
+                  className="px-2.5 py-1 sm:px-3 sm:py-1 bg-muted/50 hover:bg-muted rounded-full transition-colors"
+                >
                   Biotechnology
                 </button>
               </div>
@@ -345,6 +413,13 @@ export default function HeroSection() {
           </motion.div>
         </div>
       </div>
+
+      {/* Login Dialog */}
+      <LoginDialog
+        open={isLoginDialogOpen}
+        onOpenChange={setIsLoginDialogOpen}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </section>
   )
 }
