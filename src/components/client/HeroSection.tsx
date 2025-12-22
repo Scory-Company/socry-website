@@ -49,16 +49,21 @@ export default function HeroSection() {
     router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
   }
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = async () => {
     setIsAuthenticated(true)
-    toast.success("Login successful!", {
-      description: "Welcome back! Now performing your search...",
-    })
-
-    // Navigate to search results after successful login
-    setTimeout(() => {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
-    }, 500)
+    
+    // If user has a search query and is already personalized, redirect to search with query
+    if (searchQuery.trim()) {
+      // Check if user has completed personalization
+      const { personalizationApi } = await import('@/services')
+      const hasPersonalization = await personalizationApi.hasCompletedPersonalization()
+      
+      if (hasPersonalization) {
+        // Already personalized → go to search with query
+        router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+      }
+      // If not personalized, LoginDialog will handle redirect to /personalization
+    }
   }
 
   const handlePopularSearch = (query: string) => {
@@ -419,6 +424,7 @@ export default function HeroSection() {
         open={isLoginDialogOpen}
         onOpenChange={setIsLoginDialogOpen}
         onLoginSuccess={handleLoginSuccess}
+        searchQuery={searchQuery}
       />
     </section>
   )

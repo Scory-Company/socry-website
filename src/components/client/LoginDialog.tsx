@@ -4,17 +4,20 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { motion } from "framer-motion"
 import { Mail, Lock, User, Loader2 } from "lucide-react"
-import { authService } from "@/services"
+import { authService, personalizationApi } from "@/services"
 import { toast } from "sonner"
 import GoogleSignInButton from "./GoogleSignInButton"
+import { useRouter } from "next/navigation"
 
 interface LoginDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onLoginSuccess: () => void
+  searchQuery?: string // Optional search query to redirect to after login
 }
 
-export default function LoginDialog({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) {
+export default function LoginDialog({ open, onOpenChange, onLoginSuccess, searchQuery }: LoginDialogProps) {
+  const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -65,6 +68,21 @@ export default function LoginDialog({ open, onOpenChange, onLoginSuccess }: Logi
       
       // Reset form
       setFormData({ fullName: "", email: "", password: "" })
+
+      // Check if user has completed personalization
+      const hasPersonalization = await personalizationApi.hasCompletedPersonalization()
+      
+      if (hasPersonalization) {
+        // Already personalized → go to search (with query if available)
+        if (searchQuery?.trim()) {
+          router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+        } else {
+          router.push('/search')
+        }
+      } else {
+        // Not personalized → go to personalization
+        router.push('/personalization')
+      }
     } catch (error: any) {
       toast.error(isLogin ? "Login failed" : "Registration failed", {
         description: error.message || "Please try again",
@@ -200,10 +218,24 @@ export default function LoginDialog({ open, onOpenChange, onLoginSuccess }: Logi
 
           {/* Google Sign In Button */}
           <GoogleSignInButton
-            onSuccess={() => {
+            onSuccess={async () => {
               onLoginSuccess()
               onOpenChange(false)
               setFormData({ fullName: "", email: "", password: "" })
+              
+              // Check if user has completed personalization
+              const hasPersonalization = await personalizationApi.hasCompletedPersonalization()
+              
+              if (hasPersonalization) {
+                // Already personalized → go to search (with query if available)
+                if (searchQuery?.trim()) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+                } else {
+                  router.push('/search')
+                }
+              } else {
+                router.push('/personalization')
+              }
             }}
           />
 

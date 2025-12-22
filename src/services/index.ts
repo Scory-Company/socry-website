@@ -23,6 +23,8 @@ export { authService } from './auth.service';
 export { dashboardService } from './dashboard.service';
 export { usersService } from './users.service';
 export { googleAuthService } from './googleAuth.service';
+export { personalizationApi } from './personalization.service';
+export { categoriesApi } from './categories.service';
 
 // Export types from auth.service
 export type {
@@ -47,3 +49,8 @@ export type {
     UserStats,
     UserFilters
 } from './users.service';
+
+// Export types from categories.service
+export type {
+    CategoryResponse
+} from './categories.service';

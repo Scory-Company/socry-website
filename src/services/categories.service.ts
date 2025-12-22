@@ -5,23 +5,23 @@ import api from './api';
 // ============================================
 
 export interface CategoryResponse {
-  id: string;
-  name: string;
-  slug: string;
-  icon?: string;
-  articleCount: number;
+    id: string;
+    name: string;
+    slug: string;
+    icon?: string;
+    articleCount: number;
 }
 
 export interface CategoriesListResponse {
-  data: CategoryResponse[];
-  message: string;
-  success: boolean;
+    data: CategoryResponse[];
+    message: string;
+    success: boolean;
 }
 
 export interface SingleCategoryResponse {
-  data: CategoryResponse;
-  message: string;
-  success: boolean;
+    data: CategoryResponse;
+    message: string;
+    success: boolean;
 }
 
 // ============================================
@@ -29,6 +29,6 @@ export interface SingleCategoryResponse {
 // ============================================
 
 export const categoriesApi = {
-  getAll: () => api.get<CategoriesListResponse>('/categories'),
-  getBySlug: (slug: string) => api.get<SingleCategoryResponse>(`/categories/${slug}`),
+    getAll: () => api.get<CategoriesListResponse>('/categories'),
+    getBySlug: (slug: string) => api.get<SingleCategoryResponse>(`/categories/${slug}`),
 };
