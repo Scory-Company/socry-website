@@ -84,20 +84,7 @@ export default function HeroSection() {
 
       <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-linear-to-bl from-primary/8 via-primary/3 to-transparent pointer-events-none blur-3xl" />
 
-      {/* Dark Mode Toggle Button */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50">
-        <button
-          onClick={toggleTheme}
-          className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-card border-2 border-border hover:border-primary/50 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 group"
-          aria-label="Toggle dark mode"
-        >
-          {theme === "light" ? (
-            <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-foreground group-hover:text-primary transition-colors" />
-          ) : (
-            <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-foreground group-hover:text-primary transition-colors" />
-          )}
-        </button>
-      </div>
+
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 relative z-10">
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">

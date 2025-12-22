@@ -33,6 +33,9 @@ interface SearchSidebarProps {
   onSelectCategory: (category: string) => void
 }
 
+import Image from "next/image"
+import logo from "@/assets/logo.png"
+
 export default function SearchSidebar({ selectedCategory, onSelectCategory }: SearchSidebarProps) {
   // Mock gamification data
   const userLevel = 12
@@ -51,9 +54,13 @@ export default function SearchSidebar({ selectedCategory, onSelectCategory }: Se
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <BookOpen className="size-4" />
-                </div>
+                <Image
+                  src={logo}
+                  alt="Scory Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">Scory</span>
                   <span className="text-xs text-muted-foreground">Research Made Easy</span>

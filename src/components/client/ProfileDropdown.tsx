@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { User, Settings, TrendingUp, Award, LogOut, Palette } from "lucide-react"
+import { User, Settings, TrendingUp, Award, LogOut, Moon, Sun } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { authService, type User as UserType } from "@/services"
 import { toast } from "sonner"
+import { useTheme } from "@/components/providers/ThemeProvider"
 
 export default function ProfileDropdown() {
   const [user, setUser] = useState<UserType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
     // Load user data from storage or fetch from API
@@ -163,11 +165,16 @@ export default function ProfileDropdown() {
           </a>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <a href="/settings/appearance" className="cursor-pointer">
-            <Palette className="mr-2 size-4" />
-            <span>Appearance</span>
-          </a>
+        <DropdownMenuItem
+          onClick={toggleTheme}
+          className="cursor-pointer"
+        >
+          {theme === "light" ? (
+            <Moon className="mr-2 size-4" />
+          ) : (
+            <Sun className="mr-2 size-4" />
+          )}
+          <span>{theme === "light" ? "Dark Mode" : "Light Mode"}</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

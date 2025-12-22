@@ -131,7 +131,7 @@ export default function TrendingArticles({ articles }: TrendingArticlesProps) {
             className={`overflow-x-auto scrollbar-hide w-full ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
             style={{ scrollBehavior: isDragging ? 'auto' : 'smooth' }}
           >
-            <div className="flex gap-4 sm:gap-5 lg:gap-6 pb-4 px-2 sm:px-4 lg:px-5 py-3 sm:py-4 lg:py-5">
+            <div className="flex gap-4 sm:gap-5 lg:gap-6 pb-4 px-2 sm:px-4 lg:px-5 py-3 sm:py-4 lg:py-5 py-6">
               {trendingArticles.map((article, index) => (
                 <motion.div
                   key={article.id}
