@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Search, CheckCircle, Bell } from "lucide-react"
@@ -9,127 +9,76 @@ import FilterChip from "@/components/client/FilterChip"
 import SearchSidebar from "@/components/client/SearchSidebar"
 import ProfileDropdown from "@/components/client/ProfileDropdown"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { UnifiedSearchResult } from "@/types/search"
+import { useSearch } from "@/hooks/useSearch"
 import { toast } from "sonner"
-
-// Mock data untuk demo
-const MOCK_RESULTS: UnifiedSearchResult[] = [
-  {
-    id: "1",
-    title: "Machine Learning Approaches for Predicting Athlete Performance in Competitive Sports",
-    excerpt:
-      "This comprehensive study explores various machine learning algorithms and their application in predicting athlete performance metrics across different competitive sports disciplines.",
-    authors: ["John Smith", "Sarah Johnson", "Michael Chen"],
-    year: 2024,
-    source: "internal",
-    category: "Sports Science",
-    rating: 4.8,
-    reads: "1.2K reads",
-    metadata: {
-      isSimplified: true,
-      articleId: "art-001",
-    },
-  },
-  {
-    id: "2",
-    title: "Deep Learning Models for Sports Analytics: A Comprehensive Review",
-    excerpt:
-      "An extensive review of deep learning methodologies applied to sports data analysis, including performance prediction and injury prevention.",
-    authors: ["Emily Davis", "Robert Brown"],
-    year: 2023,
-    source: "openalex",
-    journal: "Journal of Sports Analytics",
-    citations: 156,
-    pdfUrl: "https://example.com/paper.pdf",
-    doi: "10.1234/jsa.2023.001",
-    metadata: {
-      isExternal: true,
-      externalSource: "openalex",
-    },
-  },
-  {
-    id: "3",
-    title: "Climate Change Impact on Global Agricultural Productivity: A Meta-Analysis",
-    excerpt:
-      "This meta-analysis examines the correlation between climate change indicators and agricultural output across different geographical regions.",
-    authors: ["Maria Garcia", "James Wilson", "Li Wei"],
-    year: 2024,
-    source: "scholar",
-    journal: "Environmental Science Reviews",
-    citations: 342,
-    doi: "10.5678/esr.2024.042",
-    metadata: {
-      isExternal: true,
-      externalSource: "scholar",
-    },
-  },
-  {
-    id: "4",
-    title: "Biotechnology Innovations in Crop Resistance: Recent Advances and Future Prospects",
-    excerpt:
-      "Exploring cutting-edge biotechnology techniques for developing climate-resilient crops with enhanced resistance to pests and diseases.",
-    authors: ["David Kumar", "Anna Schmidt"],
-    year: 2025,
-    source: "internal",
-    category: "Biotechnology",
-    rating: 4.5,
-    reads: "856 reads",
-    pdfUrl: "https://example.com/biotech.pdf",
-  },
-]
 
 export default function SearchResultsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const query = searchParams.get("q") || ""
+  const queryParam = searchParams.get("q") || ""
 
-  const [results, setResults] = useState<UnifiedSearchResult[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchInput, setSearchInput] = useState(query)
+  // Use custom hook for search logic
+  const { 
+    results, 
+    isLoading, 
+    isLoadingMore,
+    hasMore,
+    totalResults,
+    search, 
+    searchSource, 
+    changeSource,
+    loadMore 
+  } = useSearch({
+    initialQuery: queryParam,
+    autoFetch: true,
+    limit: 20,
+    source: 'auto',
+  })
+
+  const [searchInput, setSearchInput] = useState(queryParam)
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedSource, setSelectedSource] = useState<"all" | "internal" | "external">("all")
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchResults = async () => {
-      setIsLoading(true)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Filter mock results based on query
-      const filtered = MOCK_RESULTS.filter(
-        (result) =>
-          result.title.toLowerCase().includes(query.toLowerCase()) ||
-          result.excerpt.toLowerCase().includes(query.toLowerCase())
-      )
-      setResults(filtered)
-      setIsLoading(false)
+  // Map UI source selection to API source
+  const handleSourceChange = (uiSource: "all" | "internal" | "external") => {
+    setSelectedSource(uiSource)
+    
+    // Map UI source to API source
+    let apiSource: 'auto' | 'internal' | 'all' = 'auto'
+    if (uiSource === 'internal') {
+      apiSource = 'internal'
+    } else if (uiSource === 'all' || uiSource === 'external') {
+      apiSource = 'all' // Search all sources
     }
-
-    fetchResults()
-  }, [query])
+    
+    changeSource(apiSource)
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchInput.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchInput)}`)
+      search(searchInput)
+    } else {
+      router.push("/search")
+      search("")
     }
   }
 
-  const handleSimplify = (result: UnifiedSearchResult) => {
+  const handleSimplify = (result: any) => {
     toast.success("Simplification started!", {
       description: `Processing: "${result.title}"`,
     })
   }
 
   const handleReadSimplified = (articleId: string) => {
-    toast.info("Opening article...", {
-      description: `Article ID: ${articleId}`,
-    })
+    router.push(`/article/${articleId}`)
   }
 
   const handleClearSearch = () => {
     setSearchInput("")
-    router.push("/search?q=")
+    router.push("/search")
+    search("")
   }
 
   const handleClearCategory = () => {
@@ -139,6 +88,7 @@ export default function SearchResultsPage() {
   const handleClearAllFilters = () => {
     setSelectedCategory("All")
     setSelectedSource("all")
+    handleSourceChange("all")
   }
 
   // Apply filters
@@ -199,19 +149,19 @@ export default function SearchResultsPage() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-3">
                 {filteredResults.length} {filteredResults.length === 1 ? "result" : "results"} found
-                {query && <span className="text-muted-foreground"> for "{query}"</span>}
+                {queryParam && <span className="text-muted-foreground"> for "{queryParam}"</span>}
               </h2>
 
               {/* Active Filters */}
-              {(query || selectedCategory !== "All") && (
+              {(queryParam || selectedCategory !== "All") && (
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  {query && <FilterChip label={`"${query.length > 20 ? query.substring(0, 20) + "..." : query}"`} onRemove={handleClearSearch} />}
+                  {queryParam && <FilterChip label={`"${queryParam.length > 20 ? queryParam.substring(0, 20) + "..." : queryParam}"`} onRemove={handleClearSearch} />}
                   {selectedCategory !== "All" && <FilterChip label={selectedCategory} onRemove={handleClearCategory} />}
                 </div>
               )}
 
               {/* Clear All Button */}
-              {(query || selectedCategory !== "All") && (
+              {(queryParam || selectedCategory !== "All") && (
                 <button onClick={handleClearAllFilters} className="text-sm font-medium text-destructive hover:underline">
                   Clear all filters
                 </button>
@@ -242,7 +192,7 @@ export default function SearchResultsPage() {
                     <SearchResultCard
                       key={result.id}
                       result={result}
-                      highlightText={query}
+                      highlightText={queryParam}
                       onSimplify={() => handleSimplify(result)}
                       onReadSimplified={handleReadSimplified}
                     />
@@ -268,19 +218,45 @@ export default function SearchResultsPage() {
                     <SearchResultCard
                       key={result.id}
                       result={result}
-                      highlightText={query}
+                      highlightText={queryParam}
                       onSimplify={() => handleSimplify(result)}
                       onReadSimplified={handleReadSimplified}
                     />
                   ))}
 
-                {/* End Message */}
+                {/* Load More / End Message */}
                 {filteredResults.length > 0 && (
-                  <div className="flex items-center justify-center gap-2 py-6 mt-4">
-                    <CheckCircle className="w-5 h-5 text-success" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      All {filteredResults.length} {filteredResults.length === 1 ? "result" : "results"} loaded
-                    </span>
+                  <div className="flex flex-col items-center gap-3 py-6 mt-4">
+                    {/* Results Count */}
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-success" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Showing {filteredResults.length} of {totalResults} {totalResults === 1 ? "result" : "results"}
+                      </span>
+                    </div>
+
+                    {/* Load More Button */}
+                    {hasMore && (
+                      <button
+                        onClick={loadMore}
+                        disabled={isLoadingMore}
+                        className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark-shade text-primary-foreground rounded-xl font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      >
+                        {isLoadingMore ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                            <span>Loading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Load More</span>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
               </motion.div>

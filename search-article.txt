@@ -1,0 +1,352 @@
+services\searchApi.ts
+/**
+ * Unified Search API Service
+ *
+ * Integrates with backend /search endpoint
+ * Supports multiple sources: internal, OpenAlex, Google Scholar
+ */
+
+import api from './api';
+
+// ==================== TYPES ====================
+
+export type SearchSource = 'auto' | 'internal' | 'openalex' | 'scholar' | 'all';
+
+export interface SearchOptions {
+  sources?: SearchSource;
+  page?: number;
+  limit?: number;
+  year?: number;
+  openAccess?: boolean;
+  language?: string;
+}
+
+export interface SearchResultMetadata {
+  isSimplified?: boolean;
+  isExternal?: boolean;
+  articleId?: string;
+  externalId?: string;
+  externalSource?: 'openalex' | 'scholar';
+}
+
+export interface SearchResult {
+  id: string;
+  title: string;
+  excerpt: string;
+  authors: string[];
+  year: number | null;
+  source: 'internal' | 'openalex' | 'scholar';
+  type: 'article' | 'paper' | 'preprint' | 'journal-article' | 'review';
+  link: string;
+  pdfUrl: string | null;
+  citations: number;
+  rating?: number;
+  isOpenAccess: boolean;
+  publisher: string | null;
+  doi: string | null;
+  language: string | null;
+  metadata?: SearchResultMetadata;
+}
+
+export interface SearchMeta {
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean; // Indicates if there are more results to load
+  sources: {
+    internal: number;
+    openalex: number;
+    scholar: number;
+  };
+  scholarUsed: boolean;
+  searchTime: string;
+}
+
+export interface SearchResponse {
+  success: boolean;
+  query: string;
+  data: {
+    results: SearchResult[];
+    meta: SearchMeta;
+  };
+}
+
+// ==================== API FUNCTIONS ====================
+
+/**
+ * Unified Search
+ *
+ * Search across multiple sources (internal DB, OpenAlex, Google Scholar)
+ *
+ * @param query - Search query string
+ * @param options - Search options (sources, filters, pagination)
+ *
+ * @example
+ * ```ts
+ * const results = await unifiedSearch('machine learning', {
+ *   sources: 'auto',
+ *   limit: 20,
+ *   year: 2024,
+ *   openAccess: true
+ * });
+ * ```
+ */
+export async function unifiedSearch(
+  query: string,
+  options: SearchOptions = {}
+): Promise<SearchResponse> {
+  try {
+
+    const params = new URLSearchParams();
+    params.append('q', query);
+
+    if (options.sources) params.append('sources', options.sources);
+    if (options.page) params.append('page', String(options.page));
+    if (options.limit) params.append('limit', String(options.limit));
+    if (options.year) params.append('year', String(options.year));
+    if (options.openAccess !== undefined) params.append('openAccess', String(options.openAccess));
+    if (options.language) params.append('language', options.language);
+
+    const response = await api.get<SearchResponse>(`/search?${params.toString()}`);
+
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
+}
+
+/**
+ * Search Health Check
+ *
+ * Check if search service is available
+ */
+export async function searchHealthCheck(): Promise<{
+  success: boolean;
+  message: string;
+  data?: {
+    database: boolean;
+    external: {
+      openAlex: boolean;
+      scholar: boolean;
+      scholarEnabled: boolean;
+    };
+  };
+}> {
+  try {
+    const response = await api.get('/search/health');
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Search with automatic fallback
+ *
+ * Tries internal first, then external if no results
+ */
+export async function searchWithFallback(query: string): Promise<SearchResult[]> {
+  try {
+    const internalResults = await unifiedSearch(query, { sources: 'internal', limit: 20 });
+
+    if (internalResults.data.results.length > 0) {
+      return internalResults.data.results;
+    }
+
+    const externalResults = await unifiedSearch(query, { sources: 'auto', limit: 20 });
+
+    return externalResults.data.results;
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Search only internal database
+ */
+export async function searchInternal(query: string, limit = 20): Promise<SearchResult[]> {
+  try {
+    const response = await unifiedSearch(query, { sources: 'internal', limit });
+    return response.data.results;
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Search only external sources (OpenAlex + Scholar)
+ */
+export async function searchExternal(query: string, limit = 20): Promise<SearchResult[]> {
+  try {
+    const response = await unifiedSearch(query, { sources: 'auto', limit });
+    return response.data.results.filter((r) => r.source !== 'internal');
+  } catch (error) {
+    return [];
+  }
+}
+
+export default {
+  search: unifiedSearch,
+  healthCheck: searchHealthCheck,
+  withFallback: searchWithFallback,
+  internal: searchInternal,
+  external: searchExternal,
+};
+
+
+services\articles.ts
+import api from './api';
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface ArticleListParams {
+  page?: number;
+  limit?: number;
+  category?: string;
+  topic?: string;
+  search?: string;
+  sort?: 'recent' | 'popular' | 'top_rated' | 'trending' | 'random';
+  excludeRead?: boolean; // Filter out completed articles
+}
+
+// Reading Level Enum (sync with backend Prisma enum)
+export enum ReadingLevel {
+  SIMPLE = 'SIMPLE',
+  STUDENT = 'STUDENT',
+  ACADEMIC = 'ACADEMIC',
+  EXPERT = 'EXPERT',
+}
+
+// Content Block Types
+export type ContentBlock =
+  | { type: 'text'; data: { text: string } }
+  | { type: 'heading'; data: { text: string; level: 1 | 2 | 3 | 4 | 5 | 6 } }
+  | { type: 'quote'; data: { text: string; author?: string } }
+  | { type: 'list'; data: { style: 'bullet' | 'numbered'; items: string[] } }
+  | { type: 'image'; data: { url: string; caption?: string; alt?: string } }
+  | { type: 'infographic'; data: { url: string; caption?: string; alt?: string } }
+  | { type: 'callout'; data: { text: string; variant: 'info' | 'warning' | 'success' | 'error' } }
+  | { type: 'divider'; data: Record<string, never> };
+
+// Article Content (with blocks)
+export interface ArticleContent {
+  id: string;
+  articleId: string;
+  readingLevel: ReadingLevel;
+  blocks: ContentBlock[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArticleResponse {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  imageUrl?: string;
+  authorName: string;
+  authorAvatar?: string;
+  category: { id: string; name: string; slug: string };
+  rating: number;
+  totalRatings: number;
+  viewCount: number;
+  viewCountWeek?: number;
+  readCount?: number;
+  bookmarkCount?: number;
+  readTimeMinutes: number;
+  publishedAt: string;
+  isFeatured?: boolean;
+  popularityScore?: number;
+  popularityRank?: number;
+  contents?: ArticleContent[]; // Array of content for all reading levels
+  externalMetadata?: {
+    source: 'openalex' | 'scholar';
+    externalId: string;
+    doi?: string;
+    pdfUrl?: string;
+    landingPageUrl?: string;
+    year: number;
+  };
+  isExternal?: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: {
+    articles: T[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+    meta?: {
+      algorithm?: string;
+      timeframe?: string;
+      lastUpdated?: string;
+    };
+  };
+  message: string;
+  success: boolean;
+}
+
+export interface SingleResponse<T> {
+  data: T;
+  message: string;
+  success: boolean;
+}
+
+// ============================================
+// API FUNCTIONS
+// ============================================
+
+export const articlesApi = {
+  // Get articles list with filters
+  getArticles: (params?: ArticleListParams) =>
+    api.get<PaginatedResponse<ArticleResponse>>('/articles', { params }),
+
+  // Get single article by slug
+  getBySlug: (slug: string) =>
+    api.get<SingleResponse<ArticleResponse>>(`/articles/${slug}`),
+
+  // Get single article by ID (for simplified articles)
+  getById: (id: string) =>
+    api.get<SingleResponse<ArticleResponse>>(`/articles/by-id/${id}`),
+
+  // Get article content by reading level
+  getContent: (slug: string, readingLevel: string) =>
+    api.get(`/articles/${slug}/content`, { params: { readingLevel } }),
+
+  // Get personalized "For You" feed
+  getForYou: (params?: { page?: number; limit?: number; excludeRead?: boolean; sort?: string; readingLevel?: string }) =>
+    api.get<PaginatedResponse<ArticleResponse>>('/articles/for-you', { params }),
+
+  // Get popular articles
+  getPopular: (params?: { page?: number; limit?: number; timeframe?: '7d' | '30d' | 'all' }) =>
+    api.get<PaginatedResponse<ArticleResponse>>('/articles/popular', {
+      params
+    }),
+
+  // Get top rated articles
+  getTopRated: (params?: { page?: number; limit?: number }) =>
+    api.get<PaginatedResponse<ArticleResponse>>('/articles', {
+      params: { ...params, sort: 'top_rated' }
+    }),
+
+  // Get trending articles (this week)
+  getTrending: (params?: { page?: number; limit?: number }) =>
+    api.get<PaginatedResponse<ArticleResponse>>('/articles', {
+      params: { ...params, sort: 'trending' }
+    }),
+
+  // Get recent articles
+  getRecent: (params?: { page?: number; limit?: number }) =>
+    api.get<PaginatedResponse<ArticleResponse>>('/articles', {
+      params: { ...params, sort: 'recent' }
+    }),
+};
+
+

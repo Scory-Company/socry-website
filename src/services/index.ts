@@ -54,3 +54,30 @@ export type {
 export type {
     CategoryResponse
 } from './categories.service';
+
+// Export search service
+export { searchApi } from './search.service';
+
+// Export articles service
+export { articlesApi } from './articles.service';
+
+// Export types from search.service
+export type {
+    SearchSource,
+    SearchOptions,
+    SearchResult,
+    SearchResultMetadata,
+    SearchMeta,
+    SearchResponse
+} from './search.service';
+
+// Export types from articles.service
+export type {
+    ArticleListParams,
+    ArticleResponse,
+    ArticleContent,
+    ContentBlock,
+    PaginatedResponse,
+    SingleResponse
+} from './articles.service';
+export { ReadingLevel } from './articles.service';
