@@ -1,0 +1,2378 @@
+features\article\components\blocks\BlockRenderer.tsx
+import { ContentBlock } from '@/services';
+import React from 'react';
+import { CalloutBlock } from './CalloutBlock';
+import { DividerBlock } from './DividerBlock';
+import { HeadingBlock } from './HeadingBlock';
+import { ImageBlock } from './ImageBlock';
+import { InfographicBlock } from './InfographicBlock';
+import { ListBlock } from './ListBlock';
+import { QuoteBlock } from './QuoteBlock';
+import { TextBlock } from './TextBlock';
+
+interface BlockRendererProps {
+  block: ContentBlock;
+  index: number;
+}
+
+export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, index }) => {
+  switch (block.type) {
+    case 'text':
+      return <TextBlock text={block.data.text} />;
+
+    case 'heading':
+      return <HeadingBlock text={block.data.text} level={block.data.level} />;
+
+    case 'quote':
+      return <QuoteBlock text={block.data.text} author={block.data.author} />;
+
+    case 'list':
+      return <ListBlock style={block.data.style} items={block.data.items} />;
+
+    case 'image':
+      return <ImageBlock url={block.data.url} caption={block.data.caption} alt={block.data.alt} />;
+
+    case 'infographic':
+      return <InfographicBlock url={block.data.url} caption={block.data.caption} alt={block.data.alt} />;
+
+    case 'callout':
+      return <CalloutBlock text={block.data.text} variant={block.data.variant} />;
+
+    case 'divider':
+      return <DividerBlock />;
+
+    default:
+      // This should never happen due to TypeScript discriminated union
+      return null;
+  }
+};
+
+
+features\article\components\blocks\CalloutBlock.tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+interface CalloutBlockProps {
+  text: string;
+  variant: 'info' | 'warning' | 'success' | 'error';
+}
+
+export const CalloutBlock: React.FC<CalloutBlockProps> = ({ text, variant }) => {
+  const colors = Colors.light;
+
+  // Get color and icon based on variant
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'info':
+        return {
+          backgroundColor: colors.primaryLight,
+          iconColor: colors.text,
+          icon: 'information-circle' as const,
+        };
+      case 'warning':
+        return {
+          backgroundColor: '#FFF3CD',
+          iconColor: '#856404',
+          icon: 'warning' as const,
+        };
+      case 'success':
+        return {
+          backgroundColor: '#D4EDDA',
+          iconColor: '#155724',
+          icon: 'checkmark-circle' as const,
+        };
+      case 'error':
+        return {
+          backgroundColor: '#F8D7DA',
+          iconColor: '#721C24',
+          icon: 'close-circle' as const,
+        };
+      default:
+        return {
+          backgroundColor: colors.primaryLight,
+          iconColor: colors.primary,
+          icon: 'information-circle' as const,
+        };
+    }
+  };
+
+  const variantStyle = getVariantStyle();
+
+  return (
+    <View
+      style={[
+        styles.calloutContainer,
+        { backgroundColor: variantStyle.backgroundColor }
+      ]}
+    >
+      <Ionicons
+        name={variantStyle.icon}
+        size={24}
+        color={variantStyle.iconColor}
+        style={styles.icon}
+      />
+      <Text style={[styles.calloutText, { color: colors.text }]}>
+        {text}
+      </Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  calloutContainer: {
+    flexDirection: 'row',
+    padding: Spacing.md,
+    borderRadius: Radius.lg,
+    marginVertical: Spacing.md,
+    alignItems: 'flex-start',
+  },
+  icon: {
+    marginRight: Spacing.sm,
+    marginTop: 2,
+  },
+  calloutText: {
+    flex: 1,
+    fontSize: Typography.fontSize.base,
+    lineHeight: Typography.fontSize.base * 1.5,
+  },
+});
+
+
+features\article\components\blocks\DividerBlock.tsx
+import { Colors, Spacing } from '@/constants/theme';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+
+export const DividerBlock: React.FC = () => {
+  const colors = Colors.light;
+
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
+};
+
+const styles = StyleSheet.create({
+  divider: {
+    height: 1,
+    marginVertical: Spacing.lg,
+  },
+});
+
+
+features\article\components\blocks\HeadingBlock.tsx
+import { Colors, Spacing, Typography } from '@/constants/theme';
+import React from 'react';
+import { StyleSheet, Text } from 'react-native';
+
+interface HeadingBlockProps {
+  text: string;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+export const HeadingBlock: React.FC<HeadingBlockProps> = ({ text, level }) => {
+  const colors = Colors.light;
+
+  // Map heading levels to font sizes
+  const getFontSize = () => {
+    switch (level) {
+      case 1:
+        return Typography.fontSize['3xl'];
+      case 2:
+        return Typography.fontSize['2xl'];
+      case 3:
+        return Typography.fontSize.xl;
+      case 4:
+        return Typography.fontSize.lg;
+      case 5:
+        return Typography.fontSize.base;
+      case 6:
+        return Typography.fontSize.sm;
+      default:
+        return Typography.fontSize.xl;
+    }
+  };
+
+  return (
+    <Text
+      style={[
+        styles.heading,
+        {
+          color: colors.text,
+          fontSize: getFontSize(),
+        }
+      ]}
+    >
+      {text}
+    </Text>
+  );
+};
+
+const styles = StyleSheet.create({
+  heading: {
+    fontWeight: '700',
+    marginBottom: Spacing.md,
+    marginTop: Spacing.md,
+  },
+});
+
+
+features\article\components\blocks\ImageBlock.tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import React from 'react';
+import { StyleSheet, Text, View, Image } from 'react-native';
+
+interface ImageBlockProps {
+  url: string;
+  caption?: string;
+  alt?: string;
+}
+
+export const ImageBlock: React.FC<ImageBlockProps> = ({ url, caption, alt }) => {
+  const colors = Colors.light;
+
+  return (
+    <View style={styles.imageContainer}>
+      <Image
+        source={{ uri: url }}
+        style={styles.image}
+        resizeMode="cover"
+        accessibilityLabel={alt}
+      />
+      {caption && (
+        <Text style={[styles.caption, { color: colors.textMuted }]}>
+          {caption}
+        </Text>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  imageContainer: {
+    marginVertical: Spacing.lg,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: Radius.lg,
+  },
+  caption: {
+    fontSize: Typography.fontSize.sm,
+    fontStyle: 'italic',
+    marginTop: Spacing.sm,
+    textAlign: 'center',
+  },
+});
+
+features\article\components\blocks\InfographicBlock.tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import React from 'react';
+import { StyleSheet, Text, View, Image } from 'react-native';
+
+interface InfographicBlockProps {
+  url: string;
+  caption?: string;
+  alt?: string;
+}
+
+export const InfographicBlock: React.FC<InfographicBlockProps> = ({ url, caption, alt }) => {
+  const colors = Colors.light;
+
+  return (
+    <View style={styles.infographicContainer}>
+      <Image
+        source={{ uri: url }}
+        style={styles.infographic}
+        resizeMode="contain"
+        accessibilityLabel={alt}
+      />
+      {caption && (
+        <Text style={[styles.caption, { color: colors.textMuted }]}>
+          {caption}
+        </Text>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  infographicContainer: {
+    marginVertical: Spacing.lg,
+    alignItems: 'center',
+  },
+  infographic: {
+    width: '100%',
+    height: 300,
+    borderRadius: Radius.lg,
+  },
+  caption: {
+    fontSize: Typography.fontSize.sm,
+    fontStyle: 'italic',
+    marginTop: Spacing.sm,
+    textAlign: 'center',
+    paddingHorizontal: Spacing.md,
+  },
+});
+
+
+features\article\components\blocks\ListBlock.tsx
+import { Colors, Spacing, Typography } from '@/constants/theme';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+interface ListBlockProps {
+  style: 'bullet' | 'numbered';
+  items: string[];
+}
+
+const parseTextWithBold = (text: string, colors: typeof Colors.light) => {
+  // Split by bold markers (**text**)
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+
+  return (
+    <Text style={[styles.listText, { color: colors.textSecondary }]}>
+      {parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          // Render bold content
+          const content = part.slice(2, -2);
+          return (
+            <Text key={index} style={[styles.boldText, { color: colors.text }]}>
+              {content}
+            </Text>
+          );
+        }
+        // Render normal content
+        return <Text key={index}>{part}</Text>;
+      })}
+    </Text>
+  );
+};
+
+export const ListBlock: React.FC<ListBlockProps> = ({ style, items }) => {
+  const colors = Colors.light;
+
+  return (
+    <View style={styles.listContainer}>
+      {items.map((item, index) => (
+        <View key={index} style={styles.listItem}>
+          {style === 'bullet' ? (
+            <View style={[styles.bullet, { backgroundColor: colors.text }]} />
+          ) : (
+            <Text style={[styles.number, { color: colors.text }]}>
+              {index + 1}.
+            </Text>
+          )}
+          <View style={styles.textWrapper}>
+            {parseTextWithBold(item, colors)}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  listContainer: {
+    marginBottom: Spacing.md,
+  },
+  listItem: {
+    flexDirection: 'row',
+    marginBottom: Spacing.md,
+    paddingRight: Spacing.md,
+  },
+  textWrapper: {
+    flex: 1,
+  },
+  bullet: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 8,
+    marginRight: Spacing.md,
+  },
+  number: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+    marginRight: Spacing.sm,
+    minWidth: 24,
+  },
+  listText: {
+    fontSize: Typography.fontSize.base,
+    lineHeight: Typography.fontSize.base * 1.6,
+  },
+  boldText: {
+    fontWeight: '700',
+  },
+});
+
+
+features\article\components\blocks\QuoteBlock.tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+interface QuoteBlockProps {
+  text: string;
+  author?: string;
+}
+
+export const QuoteBlock: React.FC<QuoteBlockProps> = ({ text, author }) => {
+  const colors = Colors.light;
+
+  return (
+    <View style={[styles.quoteContainer, { borderLeftColor: colors.primary }]}>
+      <Text style={[styles.quoteText, { color: colors.text }]}>
+        &quot;{text}&quot;
+      </Text>
+      {author && (
+        <Text style={[styles.quoteAuthor, { color: colors.textMuted }]}>
+          — {author}
+        </Text>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  quoteContainer: {
+    borderLeftWidth: 4,
+    paddingLeft: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    marginVertical: Spacing.md,
+  },
+  quoteText: {
+    fontSize: Typography.fontSize.lg,
+    fontStyle: 'italic',
+    lineHeight: Typography.fontSize.lg * 1.5,
+  },
+  quoteAuthor: {
+    fontSize: Typography.fontSize.sm,
+    marginTop: Spacing.sm,
+    fontWeight: '600',
+  },
+});
+
+
+features\article\components\blocks\TextBlock.tsx
+import { Colors, Spacing, Typography } from '@/constants/theme';
+import React from 'react';
+import { Platform, StyleSheet, Text } from 'react-native';
+
+interface TextBlockProps {
+  text: string;
+}
+
+const parseFormattedText = (text: string, colors: typeof Colors.light) => {
+  // Regex explanation:
+  // 1. (**...**) for bold
+  // 2. (*...*) or (_..._) for italic
+  // 3. (`...`) or ('...') for code/highlight
+  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|'.*?')/g;
+  
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    // Bold: **text**
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <Text key={index} style={[styles.bold, { color: colors.text }]}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    }
+    // Italic: *text* (only checks * for now to avoid confusion with bullets)
+    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+      return (
+        <Text key={index} style={[styles.italic, { color: colors.text }]}>
+          {part.slice(1, -1)}
+        </Text>
+      );
+    }
+    // Code/Highlight: `text` or 'text' (as seen in your image)
+    if ((part.startsWith('`') && part.endsWith('`')) || (part.startsWith("'") && part.endsWith("'"))) {
+      // Clean quotes/backticks
+      const cleanText = part.slice(1, -1);
+      // Skip styling if it's just a single quote or empty
+      if (cleanText.length === 0) return <Text key={index}>{part}</Text>;
+
+      return (
+        <Text key={index} style={[styles.code, { color: colors.text, backgroundColor: colors.primary + '50' }]}>
+          {cleanText}
+        </Text>
+      );
+    }
+    
+    // Normal text
+    return <Text key={index}>{part}</Text>;
+  });
+};
+
+export const TextBlock: React.FC<TextBlockProps> = ({ text }) => {
+  const colors = Colors.light;
+
+  return (
+    <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+      {parseFormattedText(text, colors)}
+    </Text>
+  );
+};
+
+const styles = StyleSheet.create({
+  paragraph: {
+    fontSize: Typography.fontSize.base,
+    lineHeight: Typography.fontSize.base * 1.7,
+    marginBottom: Spacing.md,
+  },
+  bold: {
+    fontWeight: '700',
+  },
+  italic: {
+    fontStyle: 'italic',
+  },
+  code: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '500',
+  },
+});
+
+
+features\article\components\ArticleContent.tsx
+import { Spacing } from '@/constants/theme';
+import { ContentBlock } from '@/services';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { BlockRenderer } from './blocks';
+
+interface ArticleContentProps {
+  blocks: ContentBlock[];
+}
+
+export const ArticleContent: React.FC<ArticleContentProps> = ({ blocks }) => {
+  return (
+    <View style={styles.articleContent}>
+      {blocks.map((block, index) => (
+        <BlockRenderer key={index} block={block} index={index} />
+      ))}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  articleContent: {
+    marginBottom: Spacing.lg,
+  },
+});
+
+
+features\article\components\ArticleHero.tsx
+import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React from 'react';
+import { Image, ImageSourcePropType, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+interface ArticleHeroProps {
+  image: ImageSourcePropType;
+  onBookmark?: () => void;
+  onShare?: () => void;
+  isBookmarked?: boolean;
+  isBookmarking?: boolean;
+}
+
+export const ArticleHero: React.FC<ArticleHeroProps> = ({
+  image,
+  onBookmark,
+  onShare,
+  isBookmarked = false,
+  isBookmarking = false
+}) => {
+  const colors = Colors.light;
+
+  return (
+    <View style={styles.heroContainer}>
+      <Image source={image} style={styles.heroImage} />
+
+      {/* Gradient Overlay */}
+      <View style={styles.gradientOverlay} />
+
+      {/* Header with Back Button and Actions */}
+      <SafeAreaView edges={['top']} style={styles.headerContainer}>
+        <TouchableOpacity
+          style={[styles.iconButton, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        {/* Action Buttons */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: isBookmarked ? colors.primary : 'rgba(0,0,0,0.5)' }]}
+            onPress={onBookmark}
+            disabled={isBookmarking}
+          >
+            {isBookmarking ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons
+                name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={22}
+                color="#FFFFFF"
+              />
+            )}
+          </TouchableOpacity>
+          {/* <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+            onPress={onShare}
+          >
+            <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity> */}
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  heroContainer: {
+    height: 360,
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+
+features\article\components\ArticleMetadata.tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+interface ArticleMetadataProps {
+  category: string;
+  title: string;
+  author: string;
+  rating: number;
+  reads?: string;
+  readTime?: string;
+}
+
+export const ArticleMetadata: React.FC<ArticleMetadataProps> = ({
+  category,
+  title,
+  author,
+  rating,
+  reads = '10k',
+  readTime = '5 min read',
+}) => {
+  const colors = Colors.light;
+
+  // Format author name - max 2 authors, add "et al." if more
+  const formatAuthorName = (authorString: string): string => {
+    const authors = authorString.split(',').map(a => a.trim());
+
+    if (authors.length <= 2) {
+      return authorString;
+    }
+
+    // More than 2 authors, show first 2 + "et al."
+    return `${authors[0]}, ${authors[1]}, et al.`;
+  };
+
+  const displayAuthor = formatAuthorName(author);
+
+  return (
+    <>
+      {/* Category Badge */}
+      <View style={[styles.categoryBadge, { backgroundColor: colors.primary }]}>
+        <Text style={[styles.categoryText, { color: colors.text }]}>{category}</Text>
+      </View>
+
+      {/* Title */}
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+
+      {/* Metadata Row */}
+      <View style={styles.metadataContainer}>
+        <View style={styles.metadataLeft}>
+          <Text style={[styles.authorName, { color: colors.text }]}>{displayAuthor}</Text>
+          <View style={styles.metadataStats}>
+            <View style={styles.statItem}>
+              <Ionicons name="star" size={16} color={colors.warning} />
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{rating}</Text>
+            </View>
+            <View style={styles.separator} />
+            <View style={styles.statItem}>
+              <Ionicons name="eye-outline" size={16} color={colors.textMuted} />
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{reads}</Text>
+            </View>
+            <View style={styles.separator} />
+            <View style={styles.statItem}>
+              <Ionicons name="time-outline" size={16} color={colors.textMuted} />
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{readTime}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.lg,
+    marginBottom: Spacing.md,
+  },
+  categoryText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: Typography.fontSize['3xl'],
+    fontWeight: '700',
+    lineHeight: Typography.fontSize['3xl'] * 1.3,
+    marginBottom: Spacing.md,
+  },
+  metadataContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.lg,
+  },
+  metadataLeft: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+  metadataStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '500',
+  },
+  separator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+  },
+});
+
+
+features\article\components\ComprehensionSection.tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewToken,
+} from 'react-native';
+import { useQuiz } from '@/hooks/useQuiz';
+import { QuizAnswer } from '@/services';
+import { useToast } from '@/features/shared/hooks/useToast';
+import { router } from 'expo-router';
+
+interface ComprehensionSectionProps {
+  articleSlug: string;
+  category: string;
+  readingLevel?: string; // Reading level for quiz questions
+  onQuizAvailabilityChange?: (isAvailable: boolean) => void;
+  readingStartTime?: number; // Timestamp when article reading started
+  onGamificationResult?: (result: any) => void; // Callback for gamification result
+}
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2;
+
+// Letter mapping for quiz answers
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
+
+export const ComprehensionSection: React.FC<ComprehensionSectionProps> = ({
+  articleSlug,
+  readingLevel,
+  onQuizAvailabilityChange,
+  readingStartTime,
+  onGamificationResult,
+}) => {
+  const colors = Colors.light;
+  const flatListRef = useRef<FlatList>(null);
+  const toast = useToast();
+
+  // ============================================================================
+  // API Hooks
+  // ============================================================================
+
+  // Quiz hook with error handling via toast
+  const {
+    questions: quizData,
+    results,
+    isLoadingQuestions,
+    questionsError,
+    fetchQuestions,
+    submitQuiz: submitQuizApi,
+    resetQuiz,
+  } = useQuiz(articleSlug, readingLevel, {
+    onError: (message) => toast.error(message),
+  });
+
+  // ============================================================================
+  // Local State
+  // ============================================================================
+
+  // Quiz state
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string | number, number>>({});
+  const [wrongAnswers, setWrongAnswers] = useState<Record<string | number, boolean>>({});
+
+  // Computed values
+  const questionsArray = quizData?.questions || [];
+  const correctCount = Object.keys(selectedAnswers).length;
+  const isQuizCompleted = results !== null;
+
+  // ============================================================================
+  // Effects - Fetch data on mount
+  // ============================================================================
+
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]); // fetchQuestions is now stable (only changes when articleSlug changes)
+
+  // Notify parent about quiz availability
+  useEffect(() => {
+    if (!isLoadingQuestions && !questionsError) {
+      const isAvailable = questionsArray.length > 0;
+      onQuizAvailabilityChange?.(isAvailable);
+    }
+  }, [isLoadingQuestions, questionsError, questionsArray.length, onQuizAvailabilityChange]);
+
+  // ============================================================================
+  // Quiz Handlers
+  // ============================================================================
+
+  const handleStartQuiz = () => {
+    fetchQuestions();
+  };
+
+  const handleSelectAnswer = (questionId: string | number, optionIndex: number) => {
+    const question = quizData?.questions.find((q) => q.id === questionId);
+    if (!question) return;
+
+    const isCorrect = optionIndex === question.correctIndex;
+
+    if (isCorrect) {
+      // Mark as correct
+      const newSelectedAnswers = { ...selectedAnswers, [questionId]: optionIndex };
+      setSelectedAnswers(newSelectedAnswers);
+      setWrongAnswers((prev) => ({ ...prev, [questionId]: false }));
+
+      // Check if all questions are now answered correctly
+      const allQuestionsAnswered = quizData?.questions.every((q) => newSelectedAnswers[q.id] !== undefined);
+
+      if (allQuestionsAnswered) {
+        // All questions answered correctly, submit quiz
+        // ✅ OPTIMIZED: Reduced delay from 500ms to 200ms
+        setTimeout(() => {
+          handleSubmitQuiz(newSelectedAnswers); // Pass the fresh answers to avoid stale state
+        }, 200);
+      } else {
+        // Auto-advance to next unanswered question
+        const currentQuestionIndex = quizData?.questions.findIndex((q) => q.id === questionId);
+        if (currentQuestionIndex !== undefined && quizData && currentQuestionIndex < quizData.questions.length - 1) {
+          // ✅ OPTIMIZED: Reduced delay from 500ms to 300ms
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: currentQuestionIndex + 1,
+              animated: true,
+            });
+          }, 300);
+        }
+      }
+    } else {
+      // Mark as wrong
+      setWrongAnswers((prev) => ({ ...prev, [questionId]: true }));
+    }
+  };
+
+  const handleRetryQuestion = (questionId: string | number) => {
+    setWrongAnswers((prev) => ({ ...prev, [questionId]: false }));
+  };
+
+  const handleSubmitQuiz = async (finalAnswers?: Record<string | number, number>) => {
+    if (!quizData) return;
+
+    // Use provided finalAnswers or fall back to state (for manual submit button clicks)
+    const answersToSubmit = finalAnswers || selectedAnswers;
+
+    // VALIDATION: Check for unanswered questions
+    const unansweredQuestions = quizData.questions.filter((q) => answersToSubmit[q.id] === undefined);
+
+    if (unansweredQuestions.length > 0) {
+      // Block submission
+      return;
+    }
+
+    // Build answers array in API format
+    // Backend expects UUID string for questionId
+    // Use q.id (should be UUID string) or q.questionId as fallback
+    const answers: QuizAnswer[] = quizData.questions.map((q) => {
+      // Use questionId or id field (both should be UUID string from backend)
+      const questionId = q.questionId || q.id;
+
+      // Get the selected answer for this question
+      const selectedIndex = answersToSubmit[q.id];
+
+      return {
+        questionId: String(questionId), // Ensure it's string
+        selectedAnswer: OPTION_LETTERS[selectedIndex !== undefined ? selectedIndex : 0],
+      };
+    });
+
+    // Calculate reading time if readingStartTime is provided
+    let readingTime: number | undefined;
+    if (readingStartTime) {
+      const endTime = Date.now();
+      const durationInMinutes = (endTime - readingStartTime) / 60000; // Convert to minutes
+
+      // Backend validation: reading time must be between 0.1 and 240 minutes
+      if (durationInMinutes < 0.1) {
+        readingTime = 0.1; // Use minimum valid value
+      } else {
+        readingTime = Math.round(durationInMinutes * 10) / 10; // Round to 1 decimal place
+      }
+    } else {
+      toast.warning('Reading time not tracked');
+    }
+
+    // Submit quiz with reading time (triggers gamification)
+    const gamificationResult = await submitQuizApi(answers, readingTime);
+
+    // Handle gamification result if present
+    if (gamificationResult) {
+      // ✅ IMPORTANT: Always call the callback with gamification result
+      // This triggers the feedback modal after quiz completion
+      onGamificationResult?.(gamificationResult);
+    } else {
+      // ✅ FALLBACK: Even if no gamification result, still trigger callback
+      // This ensures feedback modal appears after quiz completion
+      onGamificationResult?.({
+        completionType: 'basic',
+        streakUpdated: false,
+      });
+
+      if (!readingStartTime) {
+        // Don't show toast again if already shown above
+        return;
+      }
+    }
+  };
+
+  const handleRetakeQuiz = () => {
+    setSelectedAnswers({});
+    setWrongAnswers({});
+    setCurrentIndex(0);
+    resetQuiz();
+    flatListRef.current?.scrollToIndex({ index: 0, animated: true });
+  };
+
+  // ============================================================================
+  // Helpers
+  // ============================================================================
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+      setCurrentIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  // ============================================================================
+  // Render Quiz Item
+  // ============================================================================
+
+  const renderQuizItem = ({ item: q, index }: { item: typeof questionsArray[0]; index: number }) => {
+    const isAnswered = selectedAnswers[q.id] !== undefined;
+    const isWrong = wrongAnswers[q.id] === true;
+
+    return (
+      <View style={[styles.slideCard, { width: CARD_WIDTH }]}>
+        <Text style={[styles.questionNumber, { color: colors.primary }]}>
+          {index + 1}/{questionsArray.length}
+        </Text>
+        <Text style={[styles.questionText, { color: colors.text }]}>{q.question}</Text>
+
+        {isWrong ? (
+          // Wrong answer state
+          <View style={styles.wrongAnswerContainer}>
+            <View style={[styles.wrongFeedback, { backgroundColor: '#FF4444' + '15' }]}>
+              <Ionicons name="close-circle" size={24} color="#FF4444" />
+              <Text style={[styles.wrongText, { color: '#FF4444' }]}>
+                Oops! That&apos;s not correct.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.retryQuestionButton, { backgroundColor: colors.primary }]}
+              onPress={() => handleRetryQuestion(q.id)}
+            >
+              <Ionicons name="refresh" size={18} color={colors.text} />
+              <Text style={[styles.retryQuestionText, { color: colors.text }]}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isAnswered ? (
+          // Correct answer state
+          <View style={[styles.correctFeedback, { backgroundColor: colors.success + '15' }]}>
+            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+            <Text style={[styles.correctText, { color: colors.success }]}>Correct!</Text>
+          </View>
+        ) : (
+          // Options to select
+          q.options.map((option, oIndex) => (
+            <TouchableOpacity
+              key={oIndex}
+              style={[
+                styles.optionButton,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() => handleSelectAnswer(q.id, oIndex)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.optionIndicator,
+                  {
+                    backgroundColor: 'transparent',
+                    borderColor: colors.border,
+                  },
+                ]}
+              />
+              <Text style={[styles.optionText, { color: colors.textSecondary }]}>{option}</Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+    );
+  };
+
+  // ============================================================================
+  // Render
+  // ============================================================================
+
+  // Hide entire section if no quiz available
+  if (!isLoadingQuestions && !questionsError && questionsArray.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Toast Component */}
+      <toast.ToastComponent />
+
+      {/* Section Header */}
+      <View style={styles.sectionHeader}>
+        <Ionicons name="school-outline" size={24} color={colors.primary} />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Check Your Understanding</Text>
+      </View>
+
+      {/* Quiz Section */}
+      <View style={[styles.quizContainer, { backgroundColor: colors.surface }]}>
+        {questionsError ? (
+          // Error state
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
+            <Text style={[styles.errorText, { color: colors.textMuted }]}>{questionsError}</Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: colors.primary }]}
+              onPress={handleStartQuiz}
+            >
+              <Text style={[styles.retryButtonText, { color: colors.text }]}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isLoadingQuestions ? (
+          // Loading state
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading quiz...</Text>
+          </View>
+        ) : isQuizCompleted ? (
+          // Completion state
+          <View style={styles.completionContainer}>
+            <View style={[styles.completionCard, { backgroundColor: colors.success + '15' }]}>
+              <Ionicons name="trophy" size={48} color={colors.success} />
+              <Text style={[styles.completionTitle, { color: colors.success }]}>
+                {results.score === results.totalQuestions ? 'Perfect Score!' : 'Quiz Completed!'}
+              </Text>
+              <Text style={[styles.completionSubtitle, { color: colors.textSecondary }]}>
+                You scored {results.score} out of {results.totalQuestions} ({results.percentage}%)
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.exploreButton, { backgroundColor: colors.primary }]}
+              onPress={() => router.push('/(tabs)/explore')}
+            >
+              <Ionicons name="compass" size={20} color={colors.textwhite} />
+              <Text style={[styles.exploreButtonText, { color: colors.textwhite }]}>Explore More Articles</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {/* Quiz Slides */}
+            <FlatList
+              ref={flatListRef}
+              data={questionsArray}
+              renderItem={renderQuizItem}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+              scrollEnabled={true}
+              contentContainerStyle={styles.flatListContent}
+              snapToInterval={CARD_WIDTH}
+              decelerationRate="fast"
+            />
+
+            {/* Pagination Dots */}
+            <View style={styles.pagination}>
+              {questionsArray.map((q, index) => {
+                const isAnswered = selectedAnswers[q.id] !== undefined;
+                const isActive = currentIndex === index;
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.dot,
+                      {
+                        backgroundColor: isAnswered
+                          ? colors.success
+                          : isActive
+                          ? colors.primary
+                          : colors.border,
+                        width: isActive ? 20 : 8,
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </View>
+
+            {/* Progress indicator */}
+            <Text style={[styles.progressText, { color: colors.textMuted }]}>
+              {correctCount}/{questionsArray.length} completed
+            </Text>
+          </>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: Spacing.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: '700',
+  },
+  // Quiz Styles
+  quizContainer: {
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    minHeight: 200,
+  },
+  flatListContent: {
+    gap: Spacing.md,
+  },
+  slideCard: {
+    gap: Spacing.sm,
+  },
+  questionNumber: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  questionText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+    lineHeight: Typography.fontSize.base * 1.5,
+    marginBottom: Spacing.sm,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  optionIndicator: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  optionText: {
+    flex: 1,
+    fontSize: Typography.fontSize.sm,
+    lineHeight: Typography.fontSize.sm * 1.4,
+  },
+  // Wrong answer state
+  wrongAnswerContainer: {
+    gap: Spacing.md,
+  },
+  wrongFeedback: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    gap: Spacing.sm,
+  },
+  wrongText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+  },
+  retryQuestionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+    gap: Spacing.xs,
+  },
+  retryQuestionText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+  },
+  // Correct answer state
+  correctFeedback: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    gap: Spacing.sm,
+  },
+  correctText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+  },
+  // Pagination
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  dot: {
+    height: 8,
+    borderRadius: 4,
+  },
+  progressText: {
+    textAlign: 'center',
+    fontSize: Typography.fontSize.sm,
+  },
+  // Completion state
+  completionContainer: {
+    gap: Spacing.md,
+  },
+  completionCard: {
+    alignItems: 'center',
+    padding: Spacing.xl,
+    borderRadius: Radius.lg,
+    gap: Spacing.sm,
+  },
+  completionTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: '700',
+  },
+  completionSubtitle: {
+    fontSize: Typography.fontSize.sm,
+  },
+  retryAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    gap: Spacing.xs,
+  },
+  retryAllText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+  },
+  // Explore button (after quiz completion)
+  exploreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.lg,
+    gap: Spacing.sm,
+  },
+  exploreButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+  },
+  // Loading state
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.sm,
+  },
+  // Error state
+  errorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+    gap: Spacing.md,
+  },
+  errorText: {
+    fontSize: Typography.fontSize.sm,
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+  },
+  retryButtonText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '600',
+  },
+  // Empty state
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  emptyText: {
+    fontSize: Typography.fontSize.sm,
+    textAlign: 'center',
+  },
+});
+
+
+features\article\components\ReadingProgressBar.tsx
+import { Colors, Spacing } from '@/constants/theme';
+import React from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
+
+interface ReadingProgressBarProps {
+  progress: number; // 0 to 1
+}
+
+export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({ progress }) => {
+  const colors = Colors.light;
+  const clampedProgress = Math.min(Math.max(progress, 0), 1);
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.track, { backgroundColor: colors.border }]}>
+        <Animated.View
+          style={[
+            styles.fill,
+            {
+              backgroundColor: colors.primary,
+              width: `${clampedProgress * 100}%`,
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs,
+  },
+  track: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+});
+
+
+features\article\components\SourceLinks.tsx
+/**
+ * SourceLinks Component
+ *
+ * Shows links to original paper sources (PDF, DOI)
+ * Only visible for external articles (from Scholar/OpenAlex)
+ */
+
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Spacing, Radius, Typography } from '@/constants/theme';
+import { useToast } from '@/features/shared/hooks/useToast';
+
+interface SourceLinksProps {
+  externalMetadata?: {
+    source: 'openalex' | 'scholar';
+    externalId: string;
+    doi?: string;
+    pdfUrl?: string;
+    landingPageUrl?: string;
+    year: number;
+  };
+}
+
+export function SourceLinks({ externalMetadata }: SourceLinksProps) {
+  const colors = Colors.light;
+  const toast = useToast();
+
+  if (!externalMetadata) {
+    return null;
+  }
+
+  const handleOpenLink = async (url: string, label: string) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        toast.error(`Unable to open ${label}`, 2500);
+      }
+    } catch (error) {
+      toast.error(`Failed to open ${label}`, 2500);
+    }
+  };
+
+  const { pdfUrl, doi, landingPageUrl } = externalMetadata;
+
+  // If no links available, don't render
+  if (!pdfUrl && !doi && !landingPageUrl) {
+    return null;
+  }
+
+  return (
+    <>
+      <View style={styles.container}>
+        <View style={styles.linksRow}>
+          {/* PDF Link */}
+          {pdfUrl && (
+            <TouchableOpacity
+              style={[styles.linkButton, {
+                backgroundColor: colors.background,
+                borderColor: colors.primary,
+                borderWidth: 1.5,
+              }]}
+              onPress={() => handleOpenLink(pdfUrl, 'PDF')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="document-text-outline" size={16} color={colors.primary} />
+              <Text style={[styles.linkText, { color: colors.primary }]}>
+                PDF
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* DOI Link */}
+          {doi && (
+            <TouchableOpacity
+              style={[styles.linkButton, {
+                backgroundColor: colors.background,
+                borderColor: colors.primary,
+                borderWidth: 1.5,
+              }]}
+              onPress={() => handleOpenLink(`https://doi.org/${doi}`, 'DOI')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="link-outline" size={16} color={colors.primary} />
+              <Text style={[styles.linkText, { color: colors.primary }]}>
+                DOI
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Landing Page Link - Only show if no PDF */}
+          {landingPageUrl && !pdfUrl && !doi && (
+            <TouchableOpacity
+              style={[styles.linkButton, {
+                backgroundColor: colors.background,
+                borderColor: colors.primary,
+                borderWidth: 1.5,
+              }]}
+              onPress={() => handleOpenLink(landingPageUrl, 'Paper Website')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="globe-outline" size={16} color={colors.primary} />
+              <Text style={[styles.linkText, { color: colors.primary }]}>
+                View Paper
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Toast Notifications */}
+      <toast.ToastComponent />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    marginVertical: Spacing.sm,
+  },
+  linksRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.xs + 2,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.full,
+    gap: Spacing.xs - 2,
+  },
+  linkText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '600',
+  },
+});
+
+
+app\article\[slug].tsx
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback, useEffect } from 'react';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, NativeScrollEvent, NativeSyntheticEvent, LayoutChangeEvent, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ArticleHero,
+  ArticleMetadata,
+  ArticleContent,
+  RelatedArticles,
+  ReadingProgressBar,
+  InsightNoteFAB,
+  ComprehensionSection,
+  SourceLinks,
+  ArticleFeedbackModal,
+  ArticleQuickFeedback,
+  FeedbackPromptCard,
+} from '@/features/article/components';
+import { articlesApi, ArticleResponse, ReadingLevel, ArticleContent as ArticleContentType } from '@/services';
+import { SkeletonArticleDetail } from '@/features/shared/components';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useResimplify } from '@/hooks/useResimplify';
+import { collectionService } from '@/services/collectionService';
+import { useToast } from '@/features/shared/hooks/useToast';
+import * as BookmarkCache from '@/utils/bookmarkCache';
+import { useGamificationStats } from '@/hooks/useGamificationStats';
+import { useWeeklyGoal } from '@/hooks/useWeeklyGoal';
+import { invalidateForYouCache } from '@/hooks/useForYouArticles';
+import type { GamificationResult } from '@/types/gamification';
+import { useArticleFeedback } from '@/features/article/hooks/useArticleFeedback';
+import { useExitIntent } from '@/features/article/hooks/useExitIntent';
+
+export default function ArticleDetailScreen() {
+  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const colors = Colors.light;
+
+  // Article data state
+  const [article, setArticle] = useState<ArticleResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  // Reading level state
+  const [selectedReadingLevel, setSelectedReadingLevel] = useState<ReadingLevel>(ReadingLevel.SIMPLE);
+  const [isReadingLevelLoaded, setIsReadingLevelLoaded] = useState(false);
+
+  // Reading progress state
+  const [readingProgress, setReadingProgress] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [contentHeight, setContentHeight] = useState(0);
+
+  // Quiz availability state
+  const [isQuizAvailable, setIsQuizAvailable] = useState<boolean>(true);
+
+  // Bookmark state
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
+
+  // Reading time tracking (for gamification)
+  const [readingStartTime] = useState<number>(Date.now());
+
+  // Toast hook
+  const toast = useToast();
+
+  // Track if we've already attempted auto-resimplify for this article+level combo
+  // This prevents infinite loops when backend doesn't actually create the content
+  const autoResimplifyAttempted = React.useRef<string | null>(null);
+
+  // Re-simplify hook with error handling via toast
+  const { resimplify, resimplifyManual, isResimplifying, progress: resimplifyProgress, PremiumModal } = useResimplify({
+    onError: (message) => toast.error(message),
+    onSuccess: (message) => toast.success(message),
+  });
+
+  // Gamification hooks (for cache invalidation)
+  const { invalidateCache: invalidateStatsCache } = useGamificationStats();
+  const { invalidateCache: invalidateGoalCache } = useWeeklyGoal();
+
+  // Reading time tracking state (for feedback)
+  const [currentReadingTime, setCurrentReadingTime] = useState(0);
+
+  // Track reading time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const elapsedSeconds = Math.floor((Date.now() - readingStartTime) / 1000);
+      setCurrentReadingTime(elapsedSeconds);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [readingStartTime]);
+
+  // Article feedback hook
+  const {
+    showFeedbackModal,
+    showQuickFeedback,
+    feedbackTrigger,
+    hasFeedback,
+    triggerFeedbackAfterQuiz,
+    triggerQuickFeedback,
+    triggerManualFeedback,
+    handleFeedbackSubmit,
+    handleQuickFeedbackSubmit,
+    closeFeedbackModal,
+    closeQuickFeedback,
+  } = useArticleFeedback({
+    articleId: article?.id || '',
+    readingTime: currentReadingTime,
+  });
+
+  // Exit intent hook (for quick feedback on back button)
+  const { allowNavigation } = useExitIntent({
+    enabled: !showFeedbackModal && !showQuickFeedback,
+    onExitIntent: triggerQuickFeedback,
+  });
+
+  // Handle gamification result from quiz completion
+  const handleGamificationResult = useCallback((result: GamificationResult) => {
+
+    // Invalidate all gamification caches to refresh stats and For You feed
+    invalidateStatsCache();
+    invalidateGoalCache();
+    invalidateForYouCache(); // This will auto-refresh For You with new random articles!
+
+    // Show appropriate feedback based on completion type and streak
+    if (result.completionType === 'verified' && result.streakUpdated && result.newStreak) {
+      // Streak celebration 🔥
+      toast.success(`🔥 ${result.newStreak} day streak!`, 2000);
+    } else if (result.completionType === 'verified') {
+      // Completed but streak didn't update (already completed today)
+      toast.success('Article completed!', 1500);
+    } else if (result.completionType === 'basic') {
+      // Too fast - didn't meet verification criteria
+      toast.warning('⚡ Read carefully to earn streak points!', 2500);
+    } else if (result.completionType === 'rejected') {
+      // Rejected (shouldn't happen in normal flow)
+      toast.info('Complete the article to track progress', 2000);
+    }
+
+    // Show weekly goal progress if available
+    if (result.weeklyGoalProgress) {
+      const { completed, target } = result.weeklyGoalProgress;
+      if (completed === target) {
+        // Goal achieved! 🎉
+        setTimeout(() => {
+          toast.success(`🎯 Weekly goal achieved! ${completed}/${target} articles`, 3000);
+        }, 500);
+      }
+    }
+
+    // Trigger feedback modal after quiz completion
+    triggerFeedbackAfterQuiz();
+  }, [invalidateStatsCache, invalidateGoalCache, toast, triggerFeedbackAfterQuiz]);
+
+  // Load user's preferred reading level from storage
+  const loadPreferredReadingLevel = useCallback(async () => {
+    try {
+      const storedLevel = await AsyncStorage.getItem('preferredReadingLevel');
+      if (storedLevel && Object.values(ReadingLevel).includes(storedLevel as ReadingLevel)) {
+        setSelectedReadingLevel(storedLevel as ReadingLevel);
+      }
+    } catch {
+      // Silent error
+    } finally {
+      // Mark as loaded even if there's an error (use default SIMPLE)
+      setIsReadingLevelLoaded(true);
+    }
+  }, []);
+
+  // Re-load reading level preference when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadPreferredReadingLevel();
+    }, [loadPreferredReadingLevel])
+  );
+
+  const fetchArticle = useCallback(async () => {
+    if (!slug) return;
+
+    setIsLoading(true);
+
+    try {
+      let response;
+      try {
+        response = await articlesApi.getBySlug(slug as string);
+      } catch (slugError: any) {
+        // If slug fails, try by ID (for simplified articles)
+        if (slugError.response?.status === 404) {
+          response = await articlesApi.getById(slug as string);
+        } else {
+          throw slugError;
+        }
+      }
+
+      if (response.data?.data) {
+        setArticle(response.data.data);
+        setError(false);
+      } else {
+        setError(true);
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slug]);
+
+  // Load preferred reading level on mount (before fetching article)
+  useEffect(() => {
+    loadPreferredReadingLevel();
+  }, [loadPreferredReadingLevel]);
+
+  // Fetch article from API
+  useEffect(() => {
+    if (slug) {
+      // Reset auto-resimplify flag when navigating to a new article
+      autoResimplifyAttempted.current = null;
+      fetchArticle();
+    }
+  }, [slug, fetchArticle]);
+
+  // Check bookmark status from cache when article loads
+  useEffect(() => {
+    const checkBookmarkStatus = async () => {
+      if (article?.id) {
+        const cached = await BookmarkCache.isArticleBookmarked(article.id);
+        setIsBookmarked(cached);
+      }
+    };
+
+    checkBookmarkStatus();
+  }, [article?.id]);
+
+  // Get content for selected reading level with fallback
+  const getDisplayContent = (): ArticleContentType | null => {
+    if (!article?.contents || article.contents.length === 0) {
+      return null;
+    }
+
+    // Try to find content for selected reading level
+    const preferredContent = article.contents.find(
+      (content) => content.readingLevel === selectedReadingLevel
+    );
+    if (preferredContent) {
+      return preferredContent;
+    }
+
+    // Fallback priority: SIMPLE > STUDENT > ACADEMIC > EXPERT > First Available
+    const fallbackOrder = [ReadingLevel.SIMPLE, ReadingLevel.STUDENT, ReadingLevel.ACADEMIC, ReadingLevel.EXPERT];
+
+    for (const level of fallbackOrder) {
+      const fallbackContent = article.contents.find(content => content.readingLevel === level);
+      if (fallbackContent) {
+        return fallbackContent;
+      }
+    }
+
+    // Last fallback: return first available content
+    return article.contents[0] || null;
+  };
+
+  const displayContent = getDisplayContent();
+
+  // Check if preferred reading level is available
+  const isPreferredLevelAvailable = article?.contents?.some(
+    (content) => content.readingLevel === selectedReadingLevel
+  );
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      if (scrollableHeight > 0) {
+        const progress = contentOffset.y / scrollableHeight;
+        setReadingProgress(Math.min(Math.max(progress, 0), 1));
+      }
+    },
+    []
+  );
+
+  const handleContentLayout = useCallback((event: LayoutChangeEvent) => {
+    setContentHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const handleSaveNote = () => {
+    // TODO: Save to storage/API
+  };
+
+  // Handle bookmark toggle with optimistic updates
+  const handleBookmark = useCallback(async () => {
+    if (!article?.id || isBookmarking) return;
+
+    // Store original state for rollback
+    const previousState = isBookmarked;
+
+    // OPTIMISTIC UPDATE: Update UI immediately
+    setIsBookmarked(!isBookmarked);
+    setIsBookmarking(true);
+
+    try {
+      if (previousState) {
+        // Un-bookmark
+        await BookmarkCache.removeFromBookmarkCache(article.id);
+        const result = await collectionService.unbookmarkArticle(article.id);
+
+        // Show feedback
+        if (result.collection.wasDeleted) {
+          toast.success('Bookmark removed and collection deleted', 2000);
+        } else {
+          toast.success('Bookmark removed', 2000);
+        }
+      } else {
+        // Bookmark
+        await BookmarkCache.addToBookmarkCache(article.id);
+        const result = await collectionService.bookmarkArticle(article.id);
+
+        // Show feedback
+        if (result.collection.isNew) {
+          toast.success(`Added to new "${result.collection.category}" collection!`, 2500);
+        } else {
+          toast.success(`Added to "${result.collection.category}"`, 2000);
+        }
+      }
+    } catch (err: any) {
+      // ROLLBACK: Revert UI on error
+      setIsBookmarked(previousState);
+
+      // Rollback cache
+      if (previousState) {
+        await BookmarkCache.addToBookmarkCache(article.id);
+      } else {
+        await BookmarkCache.removeFromBookmarkCache(article.id);
+      }
+
+      // Handle specific errors
+      if (err.message.includes('already bookmarked')) {
+        toast.warning('Already in your collection', 2000);
+        setIsBookmarked(true);
+        await BookmarkCache.addToBookmarkCache(article.id);
+      } else if (err.message.includes('Unauthorized')) {
+        toast.error('Please login to bookmark', 2500);
+      } else {
+        toast.error(err.message || 'Failed to update bookmark', 2500);
+      }
+    } finally {
+      setIsBookmarking(false);
+    }
+  }, [article?.id, isBookmarked, isBookmarking, toast]);
+
+  // Handle auto re-simplify
+  const handleResimplify = useCallback(async () => {
+    if (!article?.id) return;
+
+    // Convert to string for API
+    const success = await resimplify(article.id, selectedReadingLevel as string);
+
+    if (success) {
+      // ✅ OPTIMIZED: Directly fetch article instead of router.replace
+      // This is faster because backend already cached the result
+      await fetchArticle();
+    }
+  }, [article?.id, selectedReadingLevel, resimplify, fetchArticle]);
+
+  // Handle manual re-simplify (requires premium)
+  const handleManualResimplify = useCallback(async () => {
+    if (!article?.id) return;
+
+    // Mark that we're attempting resimplify for this combo (prevent auto-trigger after manual)
+    const attemptKey = `${article.id}-${selectedReadingLevel}`;
+    autoResimplifyAttempted.current = attemptKey;
+
+    // Convert to string for API
+    const success = await resimplifyManual(article.id, selectedReadingLevel as string);
+
+    if (success) {
+      // ✅ OPTIMIZED: Directly fetch article instead of router.replace
+      // This is faster because backend already cached the result
+      await fetchArticle();
+    }
+  }, [article?.id, selectedReadingLevel, resimplifyManual, fetchArticle]);
+
+  // Auto-trigger resimplify when preferred reading level is not available
+  useEffect(() => {
+    // Create a unique key for this article + reading level combination
+    const attemptKey = `${article?.id}-${selectedReadingLevel}`;
+    
+    // Only trigger if:
+    // 1. Article is loaded
+    // 2. Not already resimplifying
+    // 3. Not loading article
+    // 4. Preferred level is not available
+    // 5. Article has at least some content (to avoid triggering on empty articles)
+    // 6. We haven't already attempted resimplify for this article+level combo
+    // 7. Reading level has been loaded from storage (IMPORTANT!)
+    if (
+      article &&
+      !isResimplifying &&
+      !isLoading &&
+      !isPreferredLevelAvailable &&
+      article.contents &&
+      article.contents.length > 0 &&
+      autoResimplifyAttempted.current !== attemptKey &&
+      isReadingLevelLoaded  // ✅ WAIT for reading level to be loaded!
+    ) {
+      // Mark that we've attempted resimplify for this combo
+      autoResimplifyAttempted.current = attemptKey;
+
+      // Trigger resimplify automatically
+      handleResimplify();
+    }
+  }, [article, isResimplifying, isLoading, isPreferredLevelAvailable, selectedReadingLevel, isReadingLevelLoaded, handleResimplify]);
+
+  // Loading state with skeleton
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+        >
+          <SkeletonArticleDetail />
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error || !article) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={colors.textMuted} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Article Not Found</Text>
+          <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>
+            The article you&apos;re looking for doesn&apos;t exist.
+          </Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            }}
+          >
+            <Text style={[styles.backButtonText, { color: colors.text }]}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      {/* Reading Progress Bar */}
+      <ReadingProgressBar progress={readingProgress} />
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        onContentSizeChange={(_, height) => setContentHeight(height)}
+      >
+        {/* Hero Image with Header */}
+        <ArticleHero
+          image={{ uri: article.imageUrl || 'https://images.unsplash.com/photo-1477332552946-cfb384aeaf1c?w=600' }}
+          onBookmark={handleBookmark}
+          onShare={() => {/* TODO: Implement share */}}
+          isBookmarked={isBookmarked}
+          isBookmarking={isBookmarking}
+        />
+
+        {/* Content Container */}
+        <View
+          style={[styles.contentContainer, { backgroundColor: colors.background }]}
+          onLayout={handleContentLayout}
+        >
+          {/* Article Metadata */}
+          <ArticleMetadata
+            category={article.category.name}
+            title={article.title}
+            author={article.authorName}
+            rating={article.rating}
+            reads={
+              article.viewCount >= 1000
+                ? `${(article.viewCount / 1000).toFixed(1)}k reads`
+                : `${article.viewCount || 0} reads`
+            }
+            readTime={`${article.readTimeMinutes || 5} min read`}
+          />
+
+          {/* Source Links (PDF, DOI) - Show if external metadata exists */}
+          {article.externalMetadata && (
+            <SourceLinks externalMetadata={article.externalMetadata} />
+          )}
+
+          {/* Auto Re-simplifying Loading Banner */}
+          {isResimplifying && (
+            <View style={[styles.levelMismatchBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+              <View style={styles.bannerContent}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <View style={styles.bannerTextContainer}>
+                  <Text style={[styles.bannerTitle, { color: colors.text }]}>
+                    {resimplifyProgress.message}
+                  </Text>
+                  <Text style={[styles.bannerSubtitle, { color: colors.textMuted }]}>
+                    This may take 20-30 seconds...
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Divider */}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          {/* Article Content */}
+          {displayContent && displayContent.blocks.length > 0 ? (
+            <ArticleContent blocks={displayContent.blocks} />
+          ) : (
+            <Text style={[styles.noContentText, { color: colors.textMuted }]}>
+              No content available for this reading level.
+            </Text>
+          )}
+
+          {/* Manual Re-simplify Card - After Content (Only show if quiz not available) */}
+          {!isResimplifying && displayContent && !isQuizAvailable && (
+            <View style={[styles.resimplifyCard, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
+              <View style={styles.resimplifyCardHeader}>
+                <Ionicons name="sparkles" size={24} color={colors.primary} />
+                <Text style={[styles.resimplifyCardTitle, { color: colors.text }]}>
+                  Want a different perspective?
+                </Text>
+              </View>
+              <Text style={[styles.resimplifyCardDescription, { color: colors.textMuted }]}>
+                Re-simplify this article to match your preferred {selectedReadingLevel.charAt(0) + selectedReadingLevel.slice(1).toLowerCase()} reading level for better understanding.
+              </Text>
+              <TouchableOpacity
+                style={[styles.resimplifyCardButton, { backgroundColor: colors.primary }]}
+                onPress={handleManualResimplify}
+              >
+                <Ionicons name="refresh" size={18} color={colors.textwhite} />
+                <Text style={[styles.resimplifyCardButtonText, { color: colors.textwhite }]}>
+                  Re-simplify Now
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Comprehension Section */}
+          <ComprehensionSection
+            articleSlug={article.slug}
+            category={article.category.name}
+            readingLevel={selectedReadingLevel}
+            onQuizAvailabilityChange={setIsQuizAvailable}
+            readingStartTime={readingStartTime}
+            onGamificationResult={handleGamificationResult}
+          />
+
+          {/* Feedback Prompt Card */}
+          <FeedbackPromptCard
+            onPress={triggerManualFeedback}
+            visible={!hasFeedback}
+          />
+
+          {/* Related Articles - TODO: Fetch from API */}
+          <RelatedArticles articles={[]} category={article.category.name} />
+
+          {/* Bottom Padding for FAB */}
+          <View style={{ height: 80 }} />
+        </View>
+      </ScrollView>
+
+      {/* Floating Action Button for Insight Notes */}
+      <InsightNoteFAB
+        articleSlug={article.slug}
+        articleTitle={article.title}
+        onSaveNote={handleSaveNote}
+      />
+
+      {/* Premium Upgrade Modal */}
+      <PremiumModal />
+
+      {/* Article Feedback Modal (after quiz completion) */}
+      <ArticleFeedbackModal
+        visible={showFeedbackModal}
+        onClose={closeFeedbackModal}
+        onSubmit={handleFeedbackSubmit}
+        trigger={feedbackTrigger || 'quiz_completion'}
+      />
+
+      {/* Quick Feedback (on exit intent) */}
+      <ArticleQuickFeedback
+        visible={showQuickFeedback}
+        onClose={() => {
+          closeQuickFeedback();
+          allowNavigation();
+        }}
+        onSubmit={handleQuickFeedbackSubmit}
+      />
+
+      {/* Toast Notifications */}
+      <toast.ToastComponent />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    marginTop: -20,
+    borderTopLeftRadius: Radius['2xl'],
+    borderTopRightRadius: Radius['2xl'],
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+  },
+  divider: {
+    height: 1,
+    marginVertical: Spacing.lg,
+  },
+  noContentText: {
+    fontSize: Typography.fontSize.base,
+    textAlign: 'center',
+    marginVertical: Spacing.xl,
+    fontStyle: 'italic',
+  },
+  // Reading Level Mismatch Banner
+  levelMismatchBanner: {
+    padding: Spacing.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+  },
+  bannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  bannerTextContainer: {
+    flex: 1,
+    marginLeft: Spacing.sm,
+  },
+  bannerTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  bannerSubtitle: {
+    fontSize: Typography.fontSize.xs,
+  },
+  resimplifyButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+  },
+  resimplifyButtonText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '600',
+  },
+  // Error State
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  errorTitle: {
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: '700',
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  errorSubtitle: {
+    fontSize: Typography.fontSize.base,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+  },
+  backButton: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+  },
+  backButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+  },
+  // Re-simplify Card (after content)
+  resimplifyCard: {
+    borderRadius: Radius.xl,
+    borderWidth: 1.5,
+    padding: Spacing.lg,
+    marginVertical: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  resimplifyCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  resimplifyCardTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: '700',
+    fontFamily: Typography.fontFamily.bold,
+  },
+  resimplifyCardDescription: {
+    fontSize: Typography.fontSize.sm,
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  resimplifyCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.lg,
+    gap: Spacing.sm,
+  },
+  resimplifyCardButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: '600',
+    fontFamily: Typography.fontFamily.semiBold,
+  },
+  premiumBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radius.sm,
+  },
+  premiumBadgeText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+});
+
+

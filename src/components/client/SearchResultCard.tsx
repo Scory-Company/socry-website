@@ -3,6 +3,7 @@
 import { UnifiedSearchResult } from "@/types/search"
 import { Star, FileText, ExternalLink, FileDown, Book, Sparkles, CheckCircle2, Globe } from "lucide-react"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 interface SearchResultCardProps {
   result: UnifiedSearchResult
@@ -33,6 +34,7 @@ export default function SearchResultCard({
   onSimplify,
   onReadSimplified,
 }: SearchResultCardProps) {
+  const router = useRouter()
   const isExternalSource = result.source === "openalex" || result.source === "scholar"
   const isSimplified = result.metadata?.isSimplified || false
   const rating = result.rating || (result.citations ? citationsToRating(result.citations) : 0)
@@ -74,12 +76,20 @@ export default function SearchResultCard({
   }
 
   const handleMainAction = () => {
-    if (isSimplified && result.metadata?.articleId && onReadSimplified) {
-      onReadSimplified(result.metadata.articleId)
+    if (isSimplified && result.link) {
+      // Navigate to article detail page
+      router.push(result.link)
     } else if (!isSimplified && onSimplify) {
       onSimplify()
     } else if (onPress) {
       onPress()
+    }
+  }
+
+  // Handle card click - same as main action for simplified articles
+  const handleCardClick = () => {
+    if (isSimplified && result.link) {
+      router.push(result.link)
     }
   }
 
@@ -88,7 +98,10 @@ export default function SearchResultCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-card border-2 border-border rounded-xl p-4 sm:p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
+      onClick={handleCardClick}
+      className={`bg-card border-2 border-border rounded-xl p-4 sm:p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-md ${
+        isSimplified && result.link ? 'cursor-pointer' : ''
+      }`}
     >
       {/* Badges Container */}
       <div className="flex flex-wrap items-center gap-2 mb-3">

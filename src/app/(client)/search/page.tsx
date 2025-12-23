@@ -194,7 +194,6 @@ export default function SearchResultsPage() {
                       result={result}
                       highlightText={queryParam}
                       onSimplify={() => handleSimplify(result)}
-                      onReadSimplified={handleReadSimplified}
                     />
                   ))}
 
@@ -220,7 +219,6 @@ export default function SearchResultsPage() {
                       result={result}
                       highlightText={queryParam}
                       onSimplify={() => handleSimplify(result)}
-                      onReadSimplified={handleReadSimplified}
                     />
                   ))}
 
