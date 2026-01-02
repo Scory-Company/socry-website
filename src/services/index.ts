@@ -19,20 +19,39 @@
 export { default as api, API_URL } from './api';
 
 // Export services
-export { authService } from './auth.service';
+export { authService } from './adminAuth.service';
+export { clientAuthService } from './clientAuth.service';
+export { reviewerAuthService } from './reviewerAuth.service';
+export { reviewerArticlesService } from './reviewerArticles.service';
 export { dashboardService } from './dashboard.service';
 export { usersService } from './users.service';
 export { googleAuthService } from './googleAuth.service';
 export { personalizationApi } from './personalization.service';
 export { categoriesApi } from './categories.service';
+export { simplificationService } from './simplification.service';
+export { reviewerSearchService } from './reviewerSearch.service';
 
-// Export types from auth.service
+// Export types from auth.service (Admin)
 export type {
     User,
     LoginCredentials,
+    CreateAdminData
+} from './adminAuth.service';
+
+// Export types from clientAuth.service (Client)
+export type {
+    User as ClientUser,
+    LoginCredentials as ClientLoginCredentials,
     RegisterData,
     ProfileUpdateData
-} from './auth.service';
+} from './clientAuth.service';
+
+// Export types from reviewerAuth.service (Reviewer)
+export type {
+    User as ReviewerUser,
+    LoginCredentials as ReviewerLoginCredentials,
+    RegisterData as ReviewerRegisterData
+} from './reviewerAuth.service';
 
 // Export types from dashboard.service
 export type {

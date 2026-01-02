@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { motion } from "framer-motion"
 import { Mail, Lock, User, Loader2 } from "lucide-react"
-import { authService, personalizationApi } from "@/services"
+import { clientAuthService, personalizationApi } from "@/services"
 import { toast } from "sonner"
 import GoogleSignInButton from "./GoogleSignInButton"
 import { useRouter } from "next/navigation"
@@ -33,7 +33,7 @@ export default function LoginDialog({ open, onOpenChange, onLoginSuccess, search
     try {
       if (isLogin) {
         // Login
-        const { user } = await authService.login({
+        const { user } = await clientAuthService.login({
           email: formData.email,
           password: formData.password,
         })
@@ -51,7 +51,7 @@ export default function LoginDialog({ open, onOpenChange, onLoginSuccess, search
           return
         }
 
-        const { user } = await authService.register({
+        const { user } = await clientAuthService.register({
           email: formData.email,
           password: formData.password,
           fullName: formData.fullName,

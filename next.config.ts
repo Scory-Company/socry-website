@@ -11,6 +11,15 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "picsum.photos",
       },
+      {
+        protocol: "https",
+        hostname: "assets.banksaqu.co.id",
+      },
+      {
+        // Allow all external images (wildcard)
+        protocol: "https",
+        hostname: "**",
+      },
     ],
   },
 };

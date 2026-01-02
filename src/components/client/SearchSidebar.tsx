@@ -127,7 +127,7 @@ export default function SearchSidebar({ selectedCategory, onSelectCategory }: Se
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Home">
-                  <a href="/">
+                  <a href="/home">
                     <Home className="size-4" />
                     <span>Home</span>
                   </a>

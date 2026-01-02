@@ -19,9 +19,19 @@ const api = axios.create({
 api.interceptors.request.use(
     async (config) => {
         try {
-            // Get token from localStorage (for web/Next.js)
-            // Use 'token' key to match auth.service.ts
-            const token = localStorage.getItem('token');
+            // Check route type
+            const isAdminRoute = config.url?.startsWith('/admin');
+            const isReviewerRoute = config.url?.startsWith('/reviewer');
+
+            // Get appropriate token from localStorage
+            let token;
+            if (isAdminRoute) {
+                token = localStorage.getItem('admin_token');
+            } else if (isReviewerRoute) {
+                token = localStorage.getItem('reviewer_token');
+            } else {
+                token = localStorage.getItem('token');
+            }
 
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
@@ -82,28 +92,66 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
+                // Check route type
+                const isAdminRoute = originalRequest.url?.startsWith('/admin');
+                const isReviewerRoute = originalRequest.url?.startsWith('/reviewer');
+
                 // Try to refresh token
-                const refreshToken = localStorage.getItem('refresh_token');
+                let refreshToken;
+                if (isAdminRoute) {
+                    refreshToken = localStorage.getItem('admin_refresh_token');
+                } else if (isReviewerRoute) {
+                    refreshToken = localStorage.getItem('reviewer_refresh_token');
+                } else {
+                    refreshToken = localStorage.getItem('refresh_token');
+                }
 
                 if (!refreshToken) {
                     // No refresh token, silently clear and reject
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('user');
+                    if (isAdminRoute) {
+                        localStorage.removeItem('admin_token');
+                        localStorage.removeItem('admin_refresh_token');
+                        localStorage.removeItem('admin');
+                    } else if (isReviewerRoute) {
+                        localStorage.removeItem('reviewer_token');
+                        localStorage.removeItem('reviewer_refresh_token');
+                        localStorage.removeItem('reviewer');
+                    } else {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('refresh_token');
+                        localStorage.removeItem('user');
+                    }
                     processQueue(new Error('Session expired'));
                     return Promise.reject(error);
                 }
 
-                const response = await axios.post(`${API_URL}/auth/refresh`, {
+                const refreshEndpoint = isAdminRoute
+                    ? '/admin/auth/refresh'
+                    : isReviewerRoute
+                        ? '/reviewer/auth/refresh'
+                        : '/auth/refresh';
+                const response = await axios.post(`${API_URL}${refreshEndpoint}`, {
                     refresh_token: refreshToken
                 });
 
                 const { token, refresh_token: newRefreshToken } = response.data.data;
 
-                // Store new tokens (use 'token' key to match auth.service.ts)
-                localStorage.setItem('token', token);
-                if (newRefreshToken) {
-                    localStorage.setItem('refresh_token', newRefreshToken);
+                // Store new tokens
+                if (isAdminRoute) {
+                    localStorage.setItem('admin_token', token);
+                    if (newRefreshToken) {
+                        localStorage.setItem('admin_refresh_token', newRefreshToken);
+                    }
+                } else if (isReviewerRoute) {
+                    localStorage.setItem('reviewer_token', token);
+                    if (newRefreshToken) {
+                        localStorage.setItem('reviewer_refresh_token', newRefreshToken);
+                    }
+                } else {
+                    localStorage.setItem('token', token);
+                    if (newRefreshToken) {
+                        localStorage.setItem('refresh_token', newRefreshToken);
+                    }
                 }
 
                 // Refresh successful, retry original request
@@ -112,9 +160,22 @@ api.interceptors.response.use(
                 return api(originalRequest);
             } catch (refreshError) {
                 // Refresh failed, clear tokens
-                localStorage.removeItem('token');
-                localStorage.removeItem('refresh_token');
-                localStorage.removeItem('user');
+                const isAdminRoute = originalRequest.url?.startsWith('/admin');
+                const isReviewerRoute = originalRequest.url?.startsWith('/reviewer');
+
+                if (isAdminRoute) {
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('admin_refresh_token');
+                    localStorage.removeItem('admin');
+                } else if (isReviewerRoute) {
+                    localStorage.removeItem('reviewer_token');
+                    localStorage.removeItem('reviewer_refresh_token');
+                    localStorage.removeItem('reviewer');
+                } else {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('user');
+                }
 
                 processQueue(refreshError);
 

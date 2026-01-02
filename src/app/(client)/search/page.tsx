@@ -147,11 +147,6 @@ export default function SearchResultsPage() {
           <main className="px-4 sm:px-6 lg:px-8 py-6">
             {/* Results Count */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-3">
-                {filteredResults.length} {filteredResults.length === 1 ? "result" : "results"} found
-                {queryParam && <span className="text-muted-foreground"> for "{queryParam}"</span>}
-              </h2>
-
               {/* Active Filters */}
               {(queryParam || selectedCategory !== "All") && (
                 <div className="flex flex-wrap items-center gap-2 mb-3">
