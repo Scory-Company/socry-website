@@ -66,12 +66,7 @@ export default function PublicNavbar({
   const [scrolled,   setScrolled]   = useState(false)
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [loginOpen,  setLoginOpen]  = useState(false)
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    if (typeof window === "undefined") return "light"
-    const stored = localStorage.getItem("theme")
-    if (stored === "light" || stored === "dark") return stored
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-  })
+  const [theme, setTheme] = useState<"dark" | "light">("light")
 
   // Scroll detection
   useEffect(() => {
@@ -81,13 +76,18 @@ export default function PublicNavbar({
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Apply dark class
+  // Sync theme from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
+    const stored = localStorage.getItem("theme")
+    const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    const initial = (stored === "light" || stored === "dark") ? stored : preferred
+    setTheme(initial)
+    document.documentElement.classList.toggle("dark", initial === "dark")
+  }, [])
+
+  // Apply dark class on toggle
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark")
     localStorage.setItem("theme", theme)
   }, [theme])
 

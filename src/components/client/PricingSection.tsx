@@ -7,6 +7,7 @@ const plans = [
   {
     name: "Free",
     price: 0,
+    originalPrice: 9999,
     credits: 3,
     description: "Just want to try? No commitment needed.",
     features: [
@@ -20,7 +21,8 @@ const plans = [
   },
   {
     name: "Starter",
-    price: 15000,
+    price: 14999,
+    originalPrice: 24999,
     credits: 20,
     description: "Perfect for students and casual researchers.",
     features: [
@@ -35,7 +37,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: 50000,
+    price: 49999,
+    originalPrice: 79999,
     credits: 75,
     description: "Best value for serious readers and researchers.",
     features: [
@@ -83,7 +86,7 @@ export default function PricingSection() {
         </motion.div>
 
         {/* Cards */}
-        <div className="grid sm:grid-cols-3 gap-5 max-w-4xl mx-auto items-start">
+        <div className="grid sm:grid-cols-3 gap-5 max-w-4xl mx-auto items-stretch mt-4">
           {plans.map((plan, i) => {
             const Icon = plan.icon
             return (
@@ -91,7 +94,7 @@ export default function PricingSection() {
                 key={plan.name}
                 className={`relative flex flex-col rounded-3xl border p-7 ${
                   plan.highlighted
-                    ? "border-primary shadow-[0_0_0_1px] shadow-primary bg-card"
+                    ? "border-primary shadow-[0_0_0_1px] shadow-primary bg-card pt-9"
                     : "border-border bg-card"
                 }`}
                 initial={{ opacity: 0, y: 30 }}
@@ -125,6 +128,16 @@ export default function PricingSection() {
 
                   {/* Price */}
                   <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(plan.originalPrice)}
+                      </span>
+                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        {plan.price === 0
+                          ? "100% OFF"
+                          : `${Math.round((1 - plan.price / plan.originalPrice) * 100)}% OFF`}
+                      </span>
+                    </div>
                     <div className="text-4xl font-bold tracking-tight">
                       {formatPrice(plan.price)}
                     </div>
