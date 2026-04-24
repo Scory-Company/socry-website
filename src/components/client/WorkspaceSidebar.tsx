@@ -26,10 +26,28 @@ import { toast } from "sonner"
 import logo from "@/assets/logo.png"
 import WorkspaceProfileMenu from "@/components/client/WorkspaceProfileMenu"
 
-const recentChats = [
-  "Find thesis ideas about fintech",
-  "Map this title about AI in education",
-  "Search articles on CRISPR therapy",
+export type WorkspaceRecentChat = {
+  id: string
+  label: string
+  detail?: string
+}
+
+const defaultRecentChats: WorkspaceRecentChat[] = [
+  {
+    id: "default-fintech",
+    label: "Find thesis ideas about fintech",
+    detail: "Topic exploration",
+  },
+  {
+    id: "default-title-map",
+    label: "Map this title about AI in education",
+    detail: "Title analysis",
+  },
+  {
+    id: "default-crispr",
+    label: "Search articles on CRISPR therapy",
+    detail: "Article search",
+  },
 ]
 
 const trendingReads = [
@@ -38,7 +56,11 @@ const trendingReads = [
   "Climate Tech Research",
 ]
 
-export default function WorkspaceSidebar() {
+type WorkspaceSidebarProps = {
+  recentChats?: WorkspaceRecentChat[]
+}
+
+export default function WorkspaceSidebar({ recentChats = defaultRecentChats }: WorkspaceSidebarProps) {
   const handleLogout = async () => {
     try {
       await clientAuthService.logout()
@@ -137,11 +159,16 @@ export default function WorkspaceSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {recentChats.map((chat) => (
-                <SidebarMenuItem key={chat}>
-                  <SidebarMenuButton asChild tooltip={chat}>
+                <SidebarMenuItem key={chat.id}>
+                  <SidebarMenuButton asChild tooltip={chat.label}>
                     <Link href="/workspace">
                       <MessagesSquare className="size-4 text-muted-foreground" />
-                      <span>{chat}</span>
+                      <div className="min-w-0">
+                        <span className="block truncate">{chat.label}</span>
+                        {chat.detail && (
+                          <span className="block truncate text-xs text-muted-foreground">{chat.detail}</span>
+                        )}
+                      </div>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
