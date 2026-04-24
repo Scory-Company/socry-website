@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server'
 
 // Routes that require authentication
 const protectedRoutes = [
-    '/search',
     '/profile',
     '/progress',
     '/achievements',
@@ -20,15 +19,9 @@ const protectedRoutes = [
 const authRoutes = ['/login', '/register']
 
 export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl
-
-    // Get token from cookies or localStorage (via header)
-    const token = request.cookies.get('token')?.value ||
-        request.headers.get('authorization')?.replace('Bearer ', '')
-
-    // Check if the current route is protected
-    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+    void request
+    void protectedRoutes
+    void authRoutes
 
     // TEMPORARILY DISABLED - Uncomment when /login page is ready
     // Redirect to login if accessing protected route without token

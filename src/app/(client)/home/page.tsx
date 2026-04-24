@@ -1,81 +1,238 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { 
-  Search, Bell, TrendingUp, Clock, BookOpen, Star, 
-  Sparkles, Award, Target, ChevronRight, Flame, Zap,
-  BookMarked, History, BarChart3
-} from "lucide-react"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import SearchSidebar from "@/components/client/SearchSidebar"
-import ProfileDropdown from "@/components/client/ProfileDropdown"
-import WelcomeBanner from "@/components/client/home/WelcomeBanner"
-import ForYouSection from "@/components/client/home/ForYouSection"
-import ContinueReading from "@/components/client/home/ContinueReading"
-import TrendingSection from "@/components/client/home/TrendingSection"
-import QuickActions from "@/components/client/home/QuickActions"
-import RecentActivity from "@/components/client/home/RecentActivity"
-import AchievementHighlight from "@/components/client/home/AchievementHighlight"
+import { type CSSProperties, useRef, useState } from "react"
+import { ArrowUpRight, FileUp, Search, Sparkles, WandSparkles } from "lucide-react"
+import { toast } from "sonner"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import WorkspaceSidebar from "@/components/client/WorkspaceSidebar"
+
+type AssistantMode = "default" | "title" | "search" | "upload"
+
+const modeContent: Record<
+  AssistantMode,
+  {
+    badge: string
+    title: string
+    description: string
+    placeholder: string
+    helper: string
+    buttonLabel: string
+  }
+> = {
+  default: {
+    badge: "Scory AI",
+    title: "What would you like to research today?",
+    description:
+      "Enter a research title, keyword, or rough idea. If you do not know what to search yet, just describe the topic and start from there.",
+    placeholder: "Ask Scory anything about a research topic...",
+    helper: "Example: AI in education, CRISPR cancer therapy, or help me find a thesis topic.",
+    buttonLabel: "Continue",
+  },
+  title: {
+    badge: "Title Mapping Mode",
+    title: "You already have a research title.",
+    description:
+      "Paste your title here and Scory will help map the topic, direction, and related articles around it.",
+    placeholder: "Paste your research title here...",
+    helper: "Example: The Impact of Artificial Intelligence on Personalized Learning in Higher Education",
+    buttonLabel: "Map Title",
+  },
+  search: {
+    badge: "Article Search Mode",
+    title: "Search for research articles.",
+    description: "Use keywords, topic phrases, or short descriptions to find relevant papers more quickly.",
+    placeholder: "Type keywords or a topic to search for articles...",
+    helper: "Example: quantum computing in drug discovery",
+    buttonLabel: "Search Articles",
+  },
+  upload: {
+    badge: "PDF Upload Mode",
+    title: "Upload a research article PDF.",
+    description:
+      "Choose a PDF first. Scory will continue the flow and check personalization before simplification starts.",
+    placeholder: "Optional note about the PDF or what you want Scory to focus on...",
+    helper: "Upload the PDF first. Personalization can be checked in the next step if needed.",
+    buttonLabel: "Continue Upload Flow",
+  },
+}
+
+const quickActions = [
+  {
+    key: "personalize",
+    title: "Personalize Research",
+    icon: WandSparkles,
+  },
+  {
+    key: "title",
+    title: "I Have a Title",
+    icon: Sparkles,
+  },
+  {
+    key: "upload",
+    title: "Upload Article PDF",
+    icon: FileUp,
+  },
+  {
+    key: "search",
+    title: "Search Article",
+    icon: Search,
+  },
+] as const
 
 export default function HomePage() {
-  const [selectedCategory, setSelectedCategory] = useState("All")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const availableCredits = 24
+  const [query, setQuery] = useState("")
+  const [mode, setMode] = useState<AssistantMode>("default")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
+  const currentMode = modeContent[mode]
+
+  const handleContinue = () => {
+    if (mode === "upload") {
+      if (!selectedFile) return
+      toast.message("PDF flow prepared", {
+        description: `${selectedFile.name} is ready for the next upload step.`,
+      })
+      return
+    }
+
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) return
+
+    toast.message("Workspace flow prepared", {
+      description:
+        mode === "title"
+          ? `Title mapping is ready for: ${trimmedQuery}`
+          : `Article discovery is ready for: ${trimmedQuery}`,
+    })
+  }
+
+  const handleActionClick = (actionKey: (typeof quickActions)[number]["key"]) => {
+    if (actionKey === "personalize") {
+      toast.message("Personalization flow will be rebuilt from this workspace.")
+      return
+    }
+
+    if (actionKey === "upload") {
+      setMode("upload")
+      fileInputRef.current?.click()
+      return
+    }
+
+    setSelectedFile(null)
+    setMode(actionKey === "title" ? "title" : "search")
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setSelectedFile(file)
+    setMode("upload")
+  }
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <SearchSidebar selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
+    <SidebarProvider
+      defaultOpen={true}
+      style={{ "--sidebar-width": "18rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
+    >
+      <WorkspaceSidebar />
       <SidebarInset>
-        <div className="min-h-screen bg-background">
-          {/* Header */}
-          <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-            <div className="flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-4">
-              {/* Left: Sidebar Trigger + Title */}
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.10),_transparent_32%),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--background)))]">
+          <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+            <div className="flex items-center px-4 py-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-3">
-                <SidebarTrigger />
-                <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-foreground">Home</h1>
-                  <p className="text-xs text-muted-foreground">Welcome back to Scory!</p>
+                <SidebarTrigger className="hidden md:inline-flex" />
+                <div>
+                  <h1 className="text-base font-semibold text-foreground sm:text-lg">Research Assistant</h1>
+                  <p className="text-xs text-muted-foreground">A simpler home for starting your next research.</p>
                 </div>
-              </div>
-
-              {/* Right: Notifications + Profile */}
-              <div className="flex items-center gap-3">
-                <button className="relative flex items-center justify-center w-10 h-10 bg-card border-2 border-border hover:border-primary/50 rounded-xl transition-all hover:scale-105">
-                  <Bell className="w-5 h-5 text-foreground" />
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    3
-                  </span>
-                </button>
-                <ProfileDropdown />
               </div>
             </div>
           </header>
 
-          {/* Main Content */}
-          <main className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-            {/* Welcome Banner */}
-            <WelcomeBanner />
+          <main className="flex min-h-[calc(100vh-73px)] items-center px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
+              <div className="w-full text-center">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {currentMode.badge}
+                </div>
 
-            {/* Quick Actions */}
-            <QuickActions />
+                <div className="mx-auto max-w-3xl space-y-4">
+                  <h2 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+                    {currentMode.title}
+                  </h2>
+                  <p className="mx-auto max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                    {currentMode.description}
+                  </p>
+                </div>
 
-            {/* Continue Reading */}
-            <ContinueReading />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
 
-            {/* For You Section */}
-            <ForYouSection />
+                <div className="mx-auto mt-10 w-full max-w-3xl">
+                  <div className="rounded-[26px] border border-border/80 bg-background/90 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.05)] backdrop-blur">
+                    <div className="mb-3 flex items-center justify-between px-3 pt-1">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1 text-[11px] text-muted-foreground">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        <span>Credits</span>
+                        <span className="font-semibold text-foreground">{availableCredits}</span>
+                      </div>
+                    </div>
 
-            {/* Two Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left: Trending (2/3) */}
-              <div className="lg:col-span-2">
-                <TrendingSection />
-              </div>
+                    {mode === "upload" && selectedFile && (
+                      <div className="mb-3 rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-left">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                          Selected PDF
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-foreground">{selectedFile.name}</p>
+                      </div>
+                    )}
 
-              {/* Right: Activity & Achievement (1/3) */}
-              <div className="space-y-6">
-                <AchievementHighlight />
-                {/* <RecentActivity /> */}
+                    <textarea
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder={currentMode.placeholder}
+                      className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-sm leading-7 text-foreground outline-none placeholder:text-muted-foreground sm:text-base"
+                    />
+
+                    <div className="flex flex-col gap-3 border-t border-border/60 px-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="max-w-2xl text-left text-xs leading-6 text-muted-foreground sm:text-sm">
+                        {currentMode.helper}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleContinue}
+                        disabled={mode === "upload" ? !selectedFile : !query.trim()}
+                        className="inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+                      >
+                        {currentMode.buttonLabel}
+                        <ArrowUpRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mx-auto mt-6 flex w-full max-w-4xl flex-wrap items-center justify-center gap-2">
+                  {quickActions.map((action) => (
+                    <button
+                      key={action.key}
+                      type="button"
+                      onClick={() => handleActionClick(action.key)}
+                      className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-2 text-sm text-foreground transition hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <action.icon className="h-4 w-4 text-primary" />
+                      <span>{action.title}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </main>

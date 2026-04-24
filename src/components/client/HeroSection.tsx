@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, ArrowRight, FileText, Brain, Sparkles, BookOpen, Star, StarHalf } from "lucide-react"
+import { Search, ArrowRight, FileText, Brain, BookOpen, Star, StarHalf } from "lucide-react"
 import { motion } from "framer-motion"
 import LoginDialog from "@/components/client/LoginDialog"
 import { toast } from "sonner"
@@ -23,17 +23,13 @@ export default function HeroSection() {
       setIsLoginDialogOpen(true)
       return
     }
-    router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+    router.push("/home")
   }
 
   const handleLoginSuccess = async () => {
     setIsAuthenticated(true)
     if (searchQuery.trim()) {
-      const { personalizationApi } = await import("@/services")
-      const hasPersonalization = await personalizationApi.hasCompletedPersonalization()
-      if (hasPersonalization) {
-        router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
-      }
+      router.push("/home")
     }
   }
 
@@ -43,7 +39,7 @@ export default function HeroSection() {
       setIsLoginDialogOpen(true)
       return
     }
-    router.push(`/search?q=${encodeURIComponent(query)}`)
+    router.push("/home")
   }
 
   return (
@@ -182,7 +178,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          Search any topic. Get the science behind it — summarized clearly, tailored to your level.
+          Tell us what you&apos;re researching. We&apos;ll find the papers, map the science, and simplify it — tailored to your reading level.
         </motion.p>
 
         {/* Search bar */}
@@ -203,14 +199,14 @@ export default function HeroSection() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search scientific articles..."
+              placeholder="What are you researching? e.g. CRISPR in cancer therapy"
               className="flex-1 py-2 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
             />
             <button
               type="submit"
               className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-full transition-all"
             >
-              Search
+              Explore
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -218,7 +214,7 @@ export default function HeroSection() {
           {/* Popular tags */}
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
             <span>Try:</span>
-            {["Machine Learning", "Climate Change", "Biotechnology"].map((tag) => (
+            {["Quantum Computing", "Climate Change", "Gut Microbiome", "Deep Learning"].map((tag) => (
               <button
                 key={tag}
                 type="button"
@@ -258,3 +254,4 @@ export default function HeroSection() {
     </section>
   )
 }
+
