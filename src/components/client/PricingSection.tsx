@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Check, Sparkles, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 
@@ -172,15 +173,28 @@ export default function PricingSection() {
                 </div>
 
                 {/* CTA */}
-                <button
-                  className={`mt-8 w-full py-3 rounded-2xl text-sm font-semibold transition-all ${
-                    plan.highlighted
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                      : "bg-muted hover:bg-muted/70 text-foreground"
-                  }`}
-                >
-                  {plan.cta}
-                </button>
+                {plan.price === 0 ? (
+                  <Link
+                    href="/workspace"
+                    className={`mt-8 flex w-full items-center justify-center rounded-2xl py-3 text-sm font-semibold transition-all ${
+                      plan.highlighted
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : "bg-muted hover:bg-muted/70 text-foreground"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                ) : (
+                  <button
+                    className={`mt-8 w-full rounded-2xl py-3 text-sm font-semibold transition-all ${
+                      plan.highlighted
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : "bg-muted hover:bg-muted/70 text-foreground"
+                    }`}
+                  >
+                    {plan.cta}
+                  </button>
+                )}
               </motion.div>
             )
           })}

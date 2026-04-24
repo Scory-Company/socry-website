@@ -135,7 +135,7 @@ export default function CTASection() {
 
             <motion.div variants={fadeUp} className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <button
-                onClick={() => router.push("/register")}
+                onClick={() => router.push("/workspace")}
                 className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition-transform duration-200 hover:-translate-y-0.5 hover:scale-[1.01] sm:gap-3 sm:px-6 sm:py-4 sm:text-base"
                 style={{ backgroundColor: "var(--cta-btn-primary-bg)", color: "var(--cta-btn-primary-fg)" }}
               >

@@ -1,10 +1,13 @@
 "use client"
 
-import { type CSSProperties, useRef, useState } from "react"
-import { ArrowUpRight, FileUp, Search, Sparkles, WandSparkles } from "lucide-react"
+import { type CSSProperties, useEffect, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { ArrowUpRight, FileUp, Paperclip, Search, Sparkles, WandSparkles, X } from "lucide-react"
 import { toast } from "sonner"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import WorkspaceSidebar from "@/components/client/WorkspaceSidebar"
+import LoginDialog from "@/components/client/LoginDialog"
+import { clientAuthService } from "@/services"
 
 type AssistantMode = "default" | "title" | "search" | "upload"
 
@@ -26,7 +29,7 @@ const modeContent: Record<
       "Enter a research title, keyword, or rough idea. If you do not know what to search yet, just describe the topic and start from there.",
     placeholder: "Ask Scory anything about a research topic...",
     helper: "Example: AI in education, CRISPR cancer therapy, or help me find a thesis topic.",
-    buttonLabel: "Continue",
+    buttonLabel: "Start Research",
   },
   title: {
     badge: "Title Mapping Mode",
@@ -35,7 +38,7 @@ const modeContent: Record<
       "Paste your title here and Scory will help map the topic, direction, and related articles around it.",
     placeholder: "Paste your research title here...",
     helper: "Example: The Impact of Artificial Intelligence on Personalized Learning in Higher Education",
-    buttonLabel: "Map Title",
+    buttonLabel: "Analyze Title",
   },
   search: {
     badge: "Article Search Mode",
@@ -43,7 +46,7 @@ const modeContent: Record<
     description: "Use keywords, topic phrases, or short descriptions to find relevant papers more quickly.",
     placeholder: "Type keywords or a topic to search for articles...",
     helper: "Example: quantum computing in drug discovery",
-    buttonLabel: "Search Articles",
+    buttonLabel: "Find Articles",
   },
   upload: {
     badge: "PDF Upload Mode",
@@ -52,7 +55,7 @@ const modeContent: Record<
       "Choose a PDF first. Scory will continue the flow and check personalization before simplification starts.",
     placeholder: "Optional note about the PDF or what you want Scory to focus on...",
     helper: "Upload the PDF first. Personalization can be checked in the next step if needed.",
-    buttonLabel: "Continue Upload Flow",
+    buttonLabel: "Analyze PDF",
   },
 }
 
@@ -80,15 +83,41 @@ const quickActions = [
 ] as const
 
 export default function HomePage() {
+  const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const hasAutoRunRef = useRef(false)
   const availableCredits = 24
   const [query, setQuery] = useState("")
   const [mode, setMode] = useState<AssistantMode>("default")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
 
   const currentMode = modeContent[mode]
 
-  const handleContinue = () => {
+  useEffect(() => {
+    const prompt = searchParams.get("prompt")
+    if (prompt) {
+      setQuery(prompt)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    const prompt = searchParams.get("prompt")?.trim()
+    const shouldAutoRun = searchParams.get("autorun") === "1"
+
+    if (!shouldAutoRun || !prompt || hasAutoRunRef.current) return
+    if (!clientAuthService.isAuthenticated()) return
+
+    hasAutoRunRef.current = true
+    setQuery(prompt)
+    setMode("default")
+
+    toast.message("Workspace flow prepared", {
+      description: `Article discovery is ready for: ${prompt}`,
+    })
+  }, [searchParams])
+
+  const runWorkspaceAction = () => {
     if (mode === "upload") {
       if (!selectedFile) return
       toast.message("PDF flow prepared", {
@@ -108,6 +137,23 @@ export default function HomePage() {
     })
   }
 
+  const handleSubmit = () => {
+    const canSubmit = mode === "upload" ? !!selectedFile : !!query.trim()
+    if (!canSubmit) return
+
+    if (!clientAuthService.isAuthenticated()) {
+      setIsLoginDialogOpen(true)
+      return
+    }
+
+    runWorkspaceAction()
+  }
+
+  const handleLoginSuccess = () => {
+    setIsLoginDialogOpen(false)
+    runWorkspaceAction()
+  }
+
   const handleActionClick = (actionKey: (typeof quickActions)[number]["key"]) => {
     if (actionKey === "personalize") {
       toast.message("Personalization flow will be rebuilt from this workspace.")
@@ -124,9 +170,31 @@ export default function HomePage() {
     setMode(actionKey === "title" ? "title" : "search")
   }
 
+  const handleAttachPdf = () => {
+    setMode("upload")
+    fileInputRef.current?.click()
+  }
+
+  const handleRemoveSelectedFile = () => {
+    setSelectedFile(null)
+    setMode("default")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+    if (!isPdf) {
+      toast.error("Only PDF files are supported", {
+        description: "Please choose a .pdf file to continue.",
+      })
+      event.target.value = ""
+      return
+    }
 
     setSelectedFile(file)
     setMode("upload")
@@ -134,7 +202,7 @@ export default function HomePage() {
 
   return (
     <SidebarProvider
-      defaultOpen={true}
+      defaultOpen={false}
       style={{ "--sidebar-width": "18rem", "--sidebar-width-icon": "3.5rem" } as CSSProperties}
     >
       <WorkspaceSidebar />
@@ -187,29 +255,47 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {mode === "upload" && selectedFile && (
-                      <div className="mb-3 rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-left">
-                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                          Selected PDF
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-foreground">{selectedFile.name}</p>
+                    {selectedFile && (
+                      <div className="mb-3 flex items-start justify-between gap-3 rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-left">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                            Selected PDF
+                          </p>
+                          <p className="mt-1 text-sm font-medium text-foreground">{selectedFile.name}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveSelectedFile}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:border-destructive/40 hover:text-destructive"
+                          aria-label="Remove selected PDF"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
                     )}
 
-                    <textarea
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder={currentMode.placeholder}
-                      className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-sm leading-7 text-foreground outline-none placeholder:text-muted-foreground sm:text-base"
-                    />
+                    <div className="flex items-end gap-2">
+                      <textarea
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder={currentMode.placeholder}
+                        className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-sm leading-7 text-foreground outline-none placeholder:text-muted-foreground sm:text-base"
+                      />
+                    </div>
 
-                    <div className="flex flex-col gap-3 border-t border-border/60 px-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="max-w-2xl text-left text-xs leading-6 text-muted-foreground sm:text-sm">
-                        {currentMode.helper}
-                      </p>
+                    <div className="flex items-center justify-between gap-3 border-t border-border/60 px-3 pt-4">
                       <button
                         type="button"
-                        onClick={handleContinue}
+                        onClick={handleAttachPdf}
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/80 text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                        aria-label="Attach PDF"
+                        title="Attach PDF"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
                         disabled={mode === "upload" ? !selectedFile : !query.trim()}
                         className="inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
                       >
@@ -238,6 +324,13 @@ export default function HomePage() {
           </main>
         </div>
       </SidebarInset>
+      <LoginDialog
+        open={isLoginDialogOpen}
+        onOpenChange={setIsLoginDialogOpen}
+        onLoginSuccess={handleLoginSuccess}
+        initialMode="login"
+        redirectTo={null}
+      />
     </SidebarProvider>
   )
 }

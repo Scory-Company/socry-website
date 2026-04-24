@@ -13,7 +13,7 @@ const baseService = createRoleAuthService<User>({
   fallbackName: "Scory Admin",
 });
 
-class AuthService {
+class AdminAuthService {
   async createAdmin(data: CreateAdminData): Promise<{ user: User }> {
     const result = await baseService.register(data);
     return { user: result.user };
@@ -44,4 +44,4 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService();
+export const adminAuthService = new AdminAuthService();

@@ -84,7 +84,7 @@ export default function WorkspaceSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="New Chat">
-                  <Link href="/home">
+                  <Link href="/workspace">
                     <MessageSquarePlus className="size-4" />
                     <span>New Chat</span>
                   </Link>
@@ -92,7 +92,7 @@ export default function WorkspaceSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Library">
-                  <Link href="/home">
+                  <Link href="/workspace">
                     <BookMarked className="size-4" />
                     <span>Library</span>
                   </Link>
@@ -100,7 +100,7 @@ export default function WorkspaceSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Article Collection">
-                  <Link href="/home">
+                  <Link href="/workspace">
                     <Files className="size-4" />
                     <span>Article Collection</span>
                   </Link>
@@ -119,7 +119,7 @@ export default function WorkspaceSidebar() {
               {trendingReads.map((item) => (
                 <SidebarMenuItem key={item}>
                   <SidebarMenuButton asChild tooltip={item}>
-                    <Link href="/home">
+                    <Link href="/workspace">
                       <Flame className="size-4 text-primary" />
                       <span>{item}</span>
                     </Link>
@@ -139,7 +139,7 @@ export default function WorkspaceSidebar() {
               {recentChats.map((chat) => (
                 <SidebarMenuItem key={chat}>
                   <SidebarMenuButton asChild tooltip={chat}>
-                    <Link href="/home">
+                    <Link href="/workspace">
                       <MessagesSquare className="size-4 text-muted-foreground" />
                       <span>{chat}</span>
                     </Link>

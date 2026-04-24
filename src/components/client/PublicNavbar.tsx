@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import LoginDialog from "@/components/client/LoginDialog"
 
 interface NavItem {
   name: string
@@ -62,8 +61,6 @@ export default function PublicNavbar({
 }: PublicNavbarProps) {
   const [scrolled,   setScrolled]   = useState(false)
   const [menuOpen,   setMenuOpen]   = useState(false)
-  const [loginOpen,  setLoginOpen]  = useState(false)
-  const [authMode, setAuthMode] = useState<"login" | "register">("login")
   const [theme, setTheme] = useState<"dark" | "light">("light")
 
   // Scroll detection
@@ -103,10 +100,6 @@ export default function PublicNavbar({
   }, [menuOpen])
 
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark")
-  const openAuthModal = (mode: "login" | "register" = "register") => {
-    setAuthMode(mode)
-    setLoginOpen(true)
-  }
 
   return (
     <>
@@ -182,13 +175,12 @@ export default function PublicNavbar({
               {showAuthButtons && (
                 <>
                   {/* Get Started — desktop only */}
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal("register")}
+                  <Link
+                    href="/workspace"
                     className="hidden items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark-shade md:flex"
                   >
                     Get Started
-                  </button>
+                  </Link>
               {/* Theme toggle */}
               <button
                 type="button"
@@ -303,30 +295,18 @@ export default function PublicNavbar({
               </span>
 
               {showAuthButtons && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    openAuthModal("register")
-                  }}
+                <Link
+                  href="/workspace"
+                  onClick={() => setMenuOpen(false)}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark-shade"
                 >
                   Get Started
-                </button>
+                </Link>
               )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {showAuthButtons && (
-        <LoginDialog
-          open={loginOpen}
-          onOpenChange={setLoginOpen}
-          onLoginSuccess={() => setLoginOpen(false)}
-          initialMode={authMode}
-        />
-      )}
     </>
   )
 }

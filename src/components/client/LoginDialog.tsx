@@ -15,6 +15,7 @@ interface LoginDialogProps {
   onLoginSuccess: () => void
   searchQuery?: string
   initialMode?: "login" | "register"
+  redirectTo?: string | null
 }
 
 export default function LoginDialog({
@@ -23,6 +24,7 @@ export default function LoginDialog({
   onLoginSuccess,
   searchQuery,
   initialMode = "login",
+  redirectTo = "/workspace",
 }: LoginDialogProps) {
   void searchQuery
 
@@ -78,7 +80,9 @@ export default function LoginDialog({
       onLoginSuccess()
       onOpenChange(false)
       setFormData({ fullName: "", email: "", password: "" })
-      router.push("/home")
+      if (redirectTo) {
+        router.push(redirectTo)
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Please try again"
       toast.error(isLogin ? "Login failed" : "Registration failed", {
@@ -204,7 +208,9 @@ export default function LoginDialog({
               onLoginSuccess()
               onOpenChange(false)
               setFormData({ fullName: "", email: "", password: "" })
-              router.push("/home")
+              if (redirectTo) {
+                router.push(redirectTo)
+              }
             }}
           />
 

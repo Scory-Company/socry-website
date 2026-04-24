@@ -162,7 +162,7 @@ export default function WorkspaceProfileMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="rounded-xl px-3 py-3 outline-none hover:bg-muted focus:bg-muted">
-          <Link href="/home" className="flex cursor-pointer items-center gap-3">
+          <Link href="/workspace" className="flex cursor-pointer items-center gap-3">
             <Clock3 className="size-4 text-muted-foreground" />
             <span>Personalization</span>
           </Link>

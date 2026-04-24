@@ -4,14 +4,26 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search, ArrowRight, FileText, Brain, BookOpen, Star, StarHalf } from "lucide-react"
 import { motion } from "framer-motion"
-import LoginDialog from "@/components/client/LoginDialog"
 import { toast } from "sonner"
+import LoginDialog from "@/components/client/LoginDialog"
+import { clientAuthService } from "@/services"
 
 export default function HeroSection() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  const goToWorkspace = (query: string) => {
+    const trimmedQuery = query.trim()
+    const params = new URLSearchParams()
+    if (trimmedQuery) {
+      params.set("prompt", trimmedQuery)
+      params.set("autorun", "1")
+    }
+
+    const target = params.size ? `/workspace?${params.toString()}` : "/workspace"
+    router.push(target)
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,27 +31,28 @@ export default function HeroSection() {
       toast.error("Please enter a search query", { description: "Search field cannot be empty" })
       return
     }
-    if (!isAuthenticated) {
+
+    if (!clientAuthService.isAuthenticated()) {
       setIsLoginDialogOpen(true)
       return
     }
-    router.push("/home")
-  }
 
-  const handleLoginSuccess = async () => {
-    setIsAuthenticated(true)
-    if (searchQuery.trim()) {
-      router.push("/home")
-    }
+    goToWorkspace(searchQuery)
   }
 
   const handlePopularSearch = (query: string) => {
     setSearchQuery(query)
-    if (!isAuthenticated) {
+    if (!clientAuthService.isAuthenticated()) {
       setIsLoginDialogOpen(true)
       return
     }
-    router.push("/home")
+
+    goToWorkspace(query)
+  }
+
+  const handleLoginSuccess = () => {
+    setIsLoginDialogOpen(false)
+    goToWorkspace(searchQuery)
   }
 
   return (
@@ -199,7 +212,7 @@ export default function HeroSection() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="What are you researching? e.g. CRISPR in cancer therapy"
+              placeholder="What are you researching?"
               className="flex-1 py-2 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
             />
             <button
@@ -249,7 +262,8 @@ export default function HeroSection() {
         open={isLoginDialogOpen}
         onOpenChange={setIsLoginDialogOpen}
         onLoginSuccess={handleLoginSuccess}
-        searchQuery={searchQuery}
+        initialMode="login"
+        redirectTo={null}
       />
     </section>
   )
