@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { authService } from "@/services"
+import { clientAuthService } from "@/services"
 import { toast } from "sonner"
 import { categoriesApi, type CategoryResponse } from "@/services/categories.service" 
 
@@ -341,7 +341,7 @@ export default function SearchSidebar({ selectedCategory, onSelectCategory }: Se
             <SidebarMenuButton asChild size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
               <button onClick={async () => {
                 try {
-                  await authService.logout()
+                  await clientAuthService.logout()
                   toast.success("Logged out successfully", {
                     description: "You have been logged out",
                   })

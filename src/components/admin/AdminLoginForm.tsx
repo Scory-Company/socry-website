@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Mail, Lock, Loader2, ShieldCheck } from "lucide-react"
+import { Mail, Lock, Loader2, ShieldCheck, ArrowLeft } from "lucide-react"
 import { authService } from "@/services"
 import { toast } from "sonner"
 import Image from "next/image"
 import logoImage from "@/assets/logo.png"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { motion } from "framer-motion"
 
 export default function AdminLoginForm() {
   const router = useRouter()
@@ -53,105 +56,123 @@ export default function AdminLoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-      <div className="w-full max-w-md">
-        {/* Logo & Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="relative w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+        {/* Background Decor */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/5 rounded-full blur-3xl opacity-50" />
+        </div>
+
+      <div className="w-full max-w-[400px] relative z-10">
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center mb-8"
+        >
+            <div className="relative w-16 h-16 mb-6 bg-gradient-to-tr from-primary/10 to-purple-500/10 rounded-2xl flex items-center justify-center shadow-inner border border-white/10">
               <Image
                 src={logoImage}
                 alt="Scory Logo"
-                width={48}
-                height={48}
-                className="object-contain"
+                width={40}
+                height={40}
+                className="object-contain drop-shadow-sm"
               />
             </div>
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Admin Portal</h1>
-          <p className="text-muted-foreground">Sign in to access the admin dashboard</p>
-        </div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight text-center">
+                Admin Portal
+            </h1>
+            <p className="text-muted-foreground text-sm text-center mt-2">
+                Secure access for system administrators
+            </p>
+        </motion.div>
 
-        {/* Login Card */}
-        <div className="bg-card border border-border rounded-2xl shadow-lg p-8">
-          <div className="flex items-center gap-2 mb-6 text-primary">
-            <ShieldCheck className="w-5 h-5" />
-            <span className="font-semibold">Administrator Access</span>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Field */}
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="bg-card border border-border rounded-xl shadow-lg shadow-primary/5 p-6 md:p-8 backdrop-blur-sm bg-card/95"
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="admin@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-background border-2 border-border rounded-lg focus:outline-none focus:border-primary transition-colors"
-                  required
-                />
-              </div>
+                <label className="text-xs font-medium text-foreground ml-1">Email</label>
+                <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="admin@example.com"
+                        className="pl-9 bg-background/50 focus:bg-background transition-colors"
+                        required
+                    />
+                </div>
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-3 bg-background border-2 border-border rounded-lg focus:outline-none focus:border-primary transition-colors"
-                  required
-                  minLength={6}
-                />
-              </div>
+                <label className="text-xs font-medium text-foreground ml-1">Password</label>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        placeholder="••••••••"
+                        className="pl-9 bg-background/50 focus:bg-background transition-colors"
+                        required
+                        minLength={6}
+                    />
+                </div>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+            <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-2 font-semibold shadow-md"
+                size="lg"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-5 h-5" />
-                  <span>Sign In as Admin</span>
-                </>
-              )}
-            </button>
+                {isLoading ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                    </>
+                ) : (
+                    <>
+                        Sign In <ShieldCheck className="ml-2 h-4 w-4" />
+                    </>
+                )}
+            </Button>
           </form>
 
           {/* Footer Note */}
           <div className="mt-6 pt-6 border-t border-border">
-            <p className="text-xs text-center text-muted-foreground">
-              This is a restricted area. Only authorized administrators can access this portal.
-            </p>
+             <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/50">
+                <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <p>
+                  This is a restricted area. Unauthorized access is prohibited and will be logged.
+                </p>
+             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Back to Home */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => router.push('/')}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            ← Back to Home
-          </button>
-        </div>
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-center mt-8"
+        >
+            <button
+                onClick={() => router.push('/')}
+                className="group inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+                <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                Back to Home
+            </button>
+        </motion.div>
       </div>
     </div>
   )

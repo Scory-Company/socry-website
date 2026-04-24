@@ -1,102 +1,40 @@
-/**
- * Services Index
- * 
- * Central export file for all API services and types.
- * 
- * Usage:
- * ```typescript
- * import { authService, api, type User } from '@/services';
- * 
- * // Login example
- * const { user, token } = await authService.login({ email, password });
- * 
- * // Custom API call
- * const response = await api.get('/endpoint');
- * ```
- */
+export { authService } from "./adminAuth.service";
+export { clientAuthService } from "./clientAuth.service";
+export { reviewerAuthService } from "./reviewerAuth.service";
+export { reviewerArticlesService } from "./reviewerArticles.service";
+export { dashboardService } from "./dashboard.service";
+export { usersService } from "./users.service";
+export { googleAuthService } from "./googleAuth.service";
+export { personalizationApi } from "./personalization.service";
+export { categoriesApi } from "./categories.service";
+export { simplificationService } from "./simplification.service";
+export { searchApi } from "./search.service";
+export { articlesApi, ReadingLevel } from "./articles.service";
 
-// Export API instance and configuration
-export { default as api, API_URL } from './api';
-
-// Export services
-export { authService } from './adminAuth.service';
-export { clientAuthService } from './clientAuth.service';
-export { reviewerAuthService } from './reviewerAuth.service';
-export { reviewerArticlesService } from './reviewerArticles.service';
-export { dashboardService } from './dashboard.service';
-export { usersService } from './users.service';
-export { googleAuthService } from './googleAuth.service';
-export { personalizationApi } from './personalization.service';
-export { categoriesApi } from './categories.service';
-export { simplificationService } from './simplification.service';
-export { reviewerSearchService } from './reviewerSearch.service';
-
-// Export types from auth.service (Admin)
+export type { User, LoginCredentials, CreateAdminData } from "./adminAuth.service";
 export type {
-    User,
-    LoginCredentials,
-    CreateAdminData
-} from './adminAuth.service';
-
-// Export types from clientAuth.service (Client)
+  User as ClientUser,
+  LoginCredentials as ClientLoginCredentials,
+  RegisterData,
+  ProfileUpdateData,
+} from "./clientAuth.service";
 export type {
-    User as ClientUser,
-    LoginCredentials as ClientLoginCredentials,
-    RegisterData,
-    ProfileUpdateData
-} from './clientAuth.service';
-
-// Export types from reviewerAuth.service (Reviewer)
+  User as ReviewerUser,
+  LoginCredentials as ReviewerLoginCredentials,
+  RegisterData as ReviewerRegisterData,
+} from "./reviewerAuth.service";
+export type { Metrics, Subscription, TrendingArticle, FeedbackItem, Feedback, Activity } from "./dashboard.service";
+export type { UserStats, UserFilters } from "./users.service";
+export type { CategoryResponse } from "./categories.service";
+export type { SearchSource, SearchOptions, SearchResult, SearchResultMetadata, SearchMeta, SearchResponse } from "./search.service";
+export type { ArticleListParams, ArticleResponse, ArticleContent, PaginatedResponse, SingleResponse } from "./articles.service";
+export type { AuthUser } from "@/types/auth";
 export type {
-    User as ReviewerUser,
-    LoginCredentials as ReviewerLoginCredentials,
-    RegisterData as ReviewerRegisterData
-} from './reviewerAuth.service';
-
-// Export types from dashboard.service
-export type {
-    Metrics,
-    Subscription,
-    TrendingArticle,
-    FeedbackItem,
-    Feedback,
-    Activity
-} from './dashboard.service';
-
-// Export types from users.service
-export type {
-    UserStats,
-    UserFilters
-} from './users.service';
-
-// Export types from categories.service
-export type {
-    CategoryResponse
-} from './categories.service';
-
-// Export search service
-export { searchApi } from './search.service';
-
-// Export articles service
-export { articlesApi } from './articles.service';
-
-// Export types from search.service
-export type {
-    SearchSource,
-    SearchOptions,
-    SearchResult,
-    SearchResultMetadata,
-    SearchMeta,
-    SearchResponse
-} from './search.service';
-
-// Export types from articles.service
-export type {
-    ArticleListParams,
-    ArticleResponse,
-    ArticleContent,
-    ContentBlock,
-    PaginatedResponse,
-    SingleResponse
-} from './articles.service';
-export { ReadingLevel } from './articles.service';
+  Article,
+  Pagination,
+  GetArticlesParams,
+  Quiz,
+  UpdateQuizzesData,
+  ContentBlock,
+  UpdateContentData,
+} from "@/types/article";

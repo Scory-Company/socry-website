@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { personalizationApi, authService, categoriesApi, type CategoryResponse } from "@/services"
+import { personalizationApi, clientAuthService, categoriesApi, type CategoryResponse } from "@/services"
 import { Loader2, ChevronRight, Check } from "lucide-react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
@@ -123,7 +123,7 @@ export default function PersonalizationPage() {
   }, [])
 
   const checkAuth = async () => {
-    if (!authService.isAuthenticated()) {
+    if (!clientAuthService.isAuthenticated()) {
       router.push('/')
       return
     }

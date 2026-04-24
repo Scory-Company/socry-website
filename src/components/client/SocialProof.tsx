@@ -1,8 +1,7 @@
 "use client"
 
-import { ArrowLeft, ArrowRight, Quote } from "lucide-react"
-import { useRef, useEffect, useState } from "react"
-import Image from "next/image"
+import Image, { type StaticImageData } from "next/image"
+import { motion } from "framer-motion"
 import image21 from "@/assets/social-proof/image 21.png"
 import image22 from "@/assets/social-proof/image 22.png"
 import image24 from "@/assets/social-proof/image 24.png"
@@ -13,245 +12,148 @@ import image27 from "@/assets/social-proof/image 27.png"
 const testimonials = [
   {
     id: 1,
-    quote:
-      "Finally, a tool that adapts to ME. The Personal Reading Level feature helps me understand complex international journals without constantly checking a dictionary. It bridges the language gap perfectly.",
+    quote: "Finally, a tool that adapts to me. The personalized reading level helps me understand complex journals without constantly checking a dictionary.",
     name: "Sekar",
-    role: "Student",
     location: "Bogor, Indonesia",
     image: image21,
   },
   {
     id: 2,
-    quote:
-      "I used to rely on ChatGPT, but the hallucinations were risky for my thesis. Scory is different—it uses RAG technology so I know the summaries are 100% accurate and safe to cite.",
+    quote: "I used to rely on ChatGPT, but the hallucinations were risky for my thesis. Scory is different — the summaries are accurate and safe to cite.",
     name: "Amgad",
-    role: "Student",
     location: "Yaman",
     image: image22,
   },
   {
     id: 3,
-    quote:
-      "Research usually feels draining, but Scory makes it addictive. I love the gamification features! Building my reading streak and taking quick quizzes keeps me motivated to finish my reading list.",
+    quote: "Research usually feels draining, but Scory makes it addictive. Building my reading streak keeps me motivated to finish my reading list.",
     name: "Reva",
-    role: "Student",
     location: "Yogyakarta, Indonesia",
     image: image24,
   },
   {
     id: 4,
-    quote:
-      "Scory doesn't just simplify text; it preserves the scientific context. I can grasp difficult concepts in minutes rather than hours. It's an absolute game-changer for tight deadlines.",
+    quote: "Scory doesn't just simplify text — it preserves the scientific context. I can grasp difficult concepts in minutes rather than hours.",
     name: "Lintang",
-    role: "Student",
     location: "Solo, Indonesia",
     image: image25,
   },
   {
     id: 5,
-    quote:
-      "The 'Zero Hallucination' promise is real. Unlike other AI tools that make things up, Scory sticks strictly to the source material. It gives me the confidence to use the insights for my assignments.",
+    quote: "The zero hallucination promise is real. Unlike other AI tools, Scory sticks strictly to the source material. I trust it for my assignments.",
     name: "Dimas",
-    role: "Student",
     location: "Kalimantan, Indonesia",
     image: image26,
   },
   {
     id: 6,
-    quote:
-      "As a non-native English speaker, academic jargon was my biggest enemy. Scory transforms dense paragraphs into clear, understandable language. It actually helps improve my literacy.",
+    quote: "As a non-native English speaker, academic jargon was my biggest enemy. Scory transforms dense paragraphs into clear, understandable language.",
     name: "Fasya",
-    role: "Student",
     location: "Yogyakarta, Indonesia",
     image: image27,
   },
 ]
 
-export default function SocialProof() {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = 350
-      const newScrollLeft =
-        direction === "left"
-          ? scrollRef.current.scrollLeft - scrollAmount
-          : scrollRef.current.scrollLeft + scrollAmount
-
-      scrollRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: "smooth",
-      })
-    }
-  }
-
-  // Auto-scroll functionality
-  useEffect(() => {
-    const scrollContainer = scrollRef.current
-    if (!scrollContainer || isPaused) return
-
-    const autoScroll = setInterval(() => {
-      if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth - scrollContainer.clientWidth) {
-        scrollContainer.scrollTo({ left: 0, behavior: "smooth" })
-      } else {
-        scrollContainer.scrollBy({ left: 1, behavior: "auto" })
-      }
-    }, 30)
-
-    return () => clearInterval(autoScroll)
-  }, [isPaused])
-
-  // Mouse drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!scrollRef.current) return
-    setIsDragging(true)
-    setIsPaused(true)
-    setStartX(e.pageX - scrollRef.current.offsetLeft)
-    setScrollLeft(scrollRef.current.scrollLeft)
-  }
-
-  const handleMouseLeave = () => {
-    setIsDragging(false)
-    setTimeout(() => setIsPaused(false), 2000)
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-    setTimeout(() => setIsPaused(false), 2000)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return
-    e.preventDefault()
-    const x = e.pageX - scrollRef.current.offsetLeft
-    const walk = (x - startX) * 2
-    scrollRef.current.scrollLeft = scrollLeft - walk
-  }
-
-  // Touch drag handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!scrollRef.current) return
-    setIsPaused(true)
-    setStartX(e.touches[0].pageX - scrollRef.current.offsetLeft)
-    setScrollLeft(scrollRef.current.scrollLeft)
-  }
-
-  const handleTouchEnd = () => {
-    setTimeout(() => setIsPaused(false), 2000)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!scrollRef.current) return
-    const x = e.touches[0].pageX - scrollRef.current.offsetLeft
-    const walk = (x - startX) * 2
-    scrollRef.current.scrollLeft = scrollLeft - walk
-  }
-
+function StarRating() {
   return (
-    <section className="py-8 sm:py-12 md:py-16 lg:py-20 bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
-          {/* Left Side - Title & Navigation */}
-          <div className="lg:col-span-4 space-y-4 sm:space-y-5">
-            <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-                Collaborating &<br />
-                creating <span className="text-primary-darker">Research Expert</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground">What they said about Scory</p>
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg key={i} className="h-3.5 w-3.5 fill-amber-400" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+  )
+}
+
+function TestimonialCard({
+  quote,
+  name,
+  location,
+  image,
+}: {
+  quote: string
+  name: string
+  location: string
+  image: StaticImageData
+}) {
+  return (
+    <div className="w-64 sm:w-72 shrink-0 flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+      <StarRating />
+      <p className="flex-1 text-sm text-muted-foreground leading-relaxed">
+        &ldquo;{quote}&rdquo;
+      </p>
+      <div className="flex items-center gap-3 pt-3 border-t border-border">
+        <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
+          <Image src={image} alt={name} fill className="object-cover" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">{name}</p>
+          <p className="text-xs text-muted-foreground">{location}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const row1 = testimonials
+const row2 = [...testimonials].reverse()
+
+export default function SocialProof() {
+  return (
+    <section className="py-20 sm:py-28 bg-background" id="social-proof">
+      <div className="space-y-12">
+
+        {/* Heading */}
+        <motion.div
+          className="text-center space-y-3 px-4"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+            What researchers{" "}
+            <span className="text-primary">say.</span>
+          </h2>
+          <p className="text-muted-foreground text-base sm:text-lg max-w-md mx-auto">
+            From students to researchers — real people, real results.
+          </p>
+        </motion.div>
+
+        {/* Two-row infinite scroll */}
+        <div className="relative overflow-hidden">
+          {/* Fade edges */}
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-32 z-10"
+            style={{ background: "linear-gradient(to right, var(--background), transparent)" }}
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-32 z-10"
+            style={{ background: "linear-gradient(to left, var(--background), transparent)" }}
+          />
+
+          <div className="flex flex-col gap-4">
+            {/* Row 1 — scroll left */}
+            <div className="group flex gap-4 overflow-hidden">
+              <div className="flex gap-4 animate-scroll-left group-hover:paused">
+                {[...row1, ...row1].map((t, i) => (
+                  <TestimonialCard key={i} {...t} />
+                ))}
+              </div>
             </div>
 
-            {/* Navigation Buttons - Hidden on mobile, shown on larger screens */}
-            <div className="hidden sm:flex gap-3">
-              <button
-                onClick={() => {
-                  scroll("left")
-                  setIsPaused(true)
-                  setTimeout(() => setIsPaused(false), 2000)
-                }}
-                className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-primary hover:bg-primary/20 transition-all active:scale-95"
-                aria-label="Scroll left"
-              >
-                <ArrowLeft className="w-5 h-5 text-primary" />
-              </button>
-              <button
-                onClick={() => {
-                  scroll("right")
-                  setIsPaused(true)
-                  setTimeout(() => setIsPaused(false), 2000)
-                }}
-                className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-primary hover:bg-primary/20 transition-all active:scale-95"
-                aria-label="Scroll right"
-              >
-                <ArrowRight className="w-5 h-5 text-primary" />
-              </button>
-            </div>
-          </div>
-
-          {/* Right Side - Scrollable Cards */}
-          <div className="lg:col-span-8 relative">
-            {/* Hint text for mobile users */}
-            <p className="text-xs text-muted-foreground mb-3 sm:hidden text-center">
-              Swipe to see more testimonials
-            </p>
-
-            <div
-              ref={scrollRef}
-              className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth pb-2 cursor-grab active:cursor-grabbing touch-pan-x"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              onMouseDown={handleMouseDown}
-              onMouseLeave={handleMouseLeave}
-              onMouseUp={handleMouseUp}
-              onMouseMove={handleMouseMove}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onTouchMove={handleTouchMove}
-              onMouseEnter={() => setIsPaused(true)}
-            >
-              {testimonials.map((testimonial) => (
-                <div
-                  key={testimonial.id}
-                  className="flex-none w-70 sm:w-75 md:w-[320px] bg-card border border-border rounded-xl p-4 sm:p-5 md:p-6 flex flex-col hover:shadow-lg transition-shadow select-none"
-                  style={{ minHeight: "280px" }}
-                >
-                  {/* Quote Icon */}
-                  <div className="flex justify-start mb-3">
-                    <Quote className="w-10 h-10 sm:w-12 sm:h-12 text-primary-darker fill-primary-darker" />
-                  </div>
-
-                  {/* Role Badge */}
-                  <div className="mb-3">
-                    <span className="px-3 py-1 bg-primary/10 text-primary-darker text-xs font-medium rounded-full">
-                      {testimonial.role}
-                    </span>
-                  </div>
-
-                  {/* Quote Text */}
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-3 sm:mb-4 flex-1 line-clamp-6 sm:line-clamp-5">
-                    &quot;{testimonial.quote}&quot;
-                  </p>
-
-                  {/* Author Info - Fixed position at bottom */}
-                  <div className="flex items-center gap-2 sm:gap-2.5 mt-auto pt-2 sm:pt-3 border-t border-border">
-                    <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full overflow-hidden shrink-0">
-                      <Image src={testimonial.image} alt={testimonial.name} fill className="object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs sm:text-sm md:text-base font-bold text-foreground truncate">
-                        {testimonial.name}
-                      </h4>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{testimonial.location}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            {/* Row 2 — scroll right */}
+            <div className="group flex gap-4 overflow-hidden">
+              <div className="flex gap-4 animate-scroll-right group-hover:paused">
+                {[...row2, ...row2].map((t, i) => (
+                  <TestimonialCard key={i} {...t} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
+
       </div>
     </section>
   )

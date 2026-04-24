@@ -1,9 +1,20 @@
-import type { Article } from "@/data/mock/articles";
 import { Star, Eye } from "lucide-react";
 import Image from "next/image";
 
+interface ArticleCardItem {
+  id: number;
+  image: string;
+  title: string;
+  author: string;
+  category: string;
+  rating: number;
+  reads: string;
+  publishedAt: string;
+  status: "Published" | "Draft" | "Pending";
+}
+
 interface ArticleCardProps {
-  article: Article;
+  article: ArticleCardItem;
   onPress?: () => void;
 }
 

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { authService } from "@/services"
-import { Loader2 } from "lucide-react"
+import { motion } from "framer-motion"
+import Image from "next/image"
+import logoImage from "@/assets/logo.png"
 
 interface AdminAuthGuardProps {
   children: React.ReactNode
@@ -42,7 +44,8 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
         console.error('Auth check error:', error)
         router.push('/admin')
       } finally {
-        setIsLoading(false)
+        // Subtle delay for better UX
+        setTimeout(() => setIsLoading(false), 500)
       }
     }
 
@@ -51,11 +54,40 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifying authentication...</p>
-        </div>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+        <motion.div
+           initial={{ opacity: 0, scale: 0.9 }}
+           animate={{ opacity: 1, scale: 1 }}
+           transition={{ duration: 0.3 }}
+           className="flex flex-col items-center gap-6"
+        >
+            <div className="relative w-20 h-20">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <div className="relative bg-card p-4 rounded-2xl shadow-lg border border-border/50">
+                    <Image
+                        src={logoImage}
+                        alt="Scory Loading"
+                        width={48}
+                        height={48}
+                        className="object-contain"
+                    />
+                </div>
+            </div>
+            
+            <div className="flex flex-col items-center gap-2">
+                <div className="h-1 w-24 bg-muted overflow-hidden rounded-full">
+                    <motion.div 
+                        className="h-full bg-primary"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    />
+                </div>
+                <p className="text-xs font-medium text-muted-foreground tracking-wide animate-pulse">
+                    VERIFYING ADMIN ACCESS...
+                </p>
+            </div>
+        </motion.div>
       </div>
     )
   }

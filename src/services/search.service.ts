@@ -1,173 +1,128 @@
-/**
- * Unified Search API Service
- *
- * Integrates with backend /search endpoint
- * Supports multiple sources: internal, OpenAlex, Google Scholar
- */
+import { getMockSearchResults, mockDelay } from "@/mocks/scory";
 
-import api from './api';
-
-// ==================== TYPES ====================
-
-export type SearchSource = 'auto' | 'internal' | 'openalex' | 'scholar' | 'all';
+export type SearchSource = "auto" | "internal" | "openalex" | "scholar" | "all";
 
 export interface SearchOptions {
-    sources?: SearchSource;
-    page?: number;
-    limit?: number;
-    year?: number;
-    openAccess?: boolean;
-    language?: string;
+  sources?: SearchSource;
+  page?: number;
+  limit?: number;
+  year?: number;
+  openAccess?: boolean;
+  language?: string;
 }
 
 export interface SearchResultMetadata {
-    isSimplified?: boolean;
-    isExternal?: boolean;
-    articleId?: string;
-    externalId?: string;
-    externalSource?: 'openalex' | 'scholar';
+  isSimplified?: boolean;
+  isExternal?: boolean;
+  articleId?: string;
+  externalId?: string;
+  externalSource?: "openalex" | "scholar";
 }
 
 export interface SearchResult {
-    id: string;
-    title: string;
-    excerpt: string;
-    authors: string[];
-    year: number | null;
-    source: 'internal' | 'openalex' | 'scholar';
-    type: 'article' | 'paper' | 'preprint' | 'journal-article' | 'review';
-    link: string;
-    pdfUrl: string | null;
-    citations: number;
-    rating?: number;
-    isOpenAccess: boolean;
-    publisher: string | null;
-    doi: string | null;
-    language: string | null;
-    metadata?: SearchResultMetadata;
+  id: string;
+  title: string;
+  excerpt: string;
+  authors: string[];
+  year: number | null;
+  source: "internal" | "openalex" | "scholar";
+  type: "article" | "paper" | "preprint" | "journal-article" | "review";
+  link: string;
+  pdfUrl: string | null;
+  citations: number;
+  rating?: number;
+  isOpenAccess: boolean;
+  publisher: string | null;
+  doi: string | null;
+  language: string | null;
+  metadata?: SearchResultMetadata;
+  category?: string;
+  journal?: string;
 }
 
 export interface SearchMeta {
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    sources: {
-        internal: number;
-        openalex: number;
-        scholar: number;
-    };
-    scholarUsed: boolean;
-    searchTime: string;
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  sources: {
+    internal: number;
+    openalex: number;
+    scholar: number;
+  };
+  scholarUsed: boolean;
+  searchTime: string;
 }
 
 export interface SearchResponse {
-    success: boolean;
-    query: string;
-    data: {
-        results: SearchResult[];
-        meta: SearchMeta;
-    };
+  success: boolean;
+  query: string;
+  data: {
+    results: SearchResult[];
+    meta: SearchMeta;
+  };
 }
 
-// ==================== API FUNCTIONS ====================
-
-/**
- * Unified Search
- *
- * Search across multiple sources (internal DB, OpenAlex, Google Scholar)
- *
- * @param query - Search query string
- * @param options - Search options (sources, filters, pagination)
- *
- * @example
- * ```ts
- * const results = await searchApi.search('machine learning', {
- *   sources: 'auto',
- *   limit: 20,
- *   year: 2024,
- *   openAccess: true
- * });
- * ```
- */
 export const searchApi = {
-    search: async (query: string, options: SearchOptions = {}): Promise<SearchResponse> => {
-        const params = new URLSearchParams();
-        params.append('q', query);
+  search: async (query: string, options: SearchOptions = {}): Promise<SearchResponse> => {
+    await mockDelay();
+    const page = options.page ?? 1;
+    const limit = options.limit ?? 20;
+    const source = options.sources === "openalex" || options.sources === "scholar" ? "all" : options.sources ?? "auto";
+    const allResults = getMockSearchResults(query, source as "auto" | "internal" | "all");
+    const start = (page - 1) * limit;
+    const results = allResults.slice(start, start + limit);
 
-        if (options.sources) params.append('sources', options.sources);
-        if (options.page) params.append('page', String(options.page));
-        if (options.limit) params.append('limit', String(options.limit));
-        if (options.year) params.append('year', String(options.year));
-        if (options.openAccess !== undefined) params.append('openAccess', String(options.openAccess));
-        if (options.language) params.append('language', options.language);
+    return {
+      success: true,
+      query,
+      data: {
+        results,
+        meta: {
+          total: allResults.length,
+          page,
+          limit,
+          hasMore: start + limit < allResults.length,
+          sources: {
+            internal: allResults.filter((item) => item.source === "internal").length,
+            openalex: allResults.filter((item) => item.source === "openalex").length,
+            scholar: allResults.filter((item) => item.source === "scholar").length,
+          },
+          scholarUsed: allResults.some((item) => item.source === "scholar"),
+          searchTime: "42ms",
+        },
+      },
+    };
+  },
 
-        const response = await api.get<SearchResponse>(`/search?${params.toString()}`);
-        return response.data;
-    },
+  healthCheck: async () => {
+    await mockDelay(40);
+    return {
+      success: true,
+      message: "Mock search service ready",
+      data: {
+        database: true,
+        external: {
+          openAlex: true,
+          scholar: true,
+          scholarEnabled: true,
+        },
+      },
+    };
+  },
 
-    /**
-     * Search Health Check
-     *
-     * Check if search service is available
-     */
-    healthCheck: async (): Promise<{
-        success: boolean;
-        message: string;
-        data?: {
-            database: boolean;
-            external: {
-                openAlex: boolean;
-                scholar: boolean;
-                scholarEnabled: boolean;
-            };
-        };
-    }> => {
-        const response = await api.get('/search/health');
-        return response.data;
-    },
+  searchWithFallback: async (query: string): Promise<SearchResult[]> => {
+    const response = await searchApi.search(query, { sources: "auto", limit: 20 });
+    return response.data.results;
+  },
 
-    /**
-     * Search with automatic fallback
-     *
-     * Tries internal first, then external if no results
-     */
-    searchWithFallback: async (query: string): Promise<SearchResult[]> => {
-        try {
-            const internalResults = await searchApi.search(query, { sources: 'internal', limit: 20 });
+  searchInternal: async (query: string, limit = 20): Promise<SearchResult[]> => {
+    const response = await searchApi.search(query, { sources: "internal", limit });
+    return response.data.results;
+  },
 
-            if (internalResults.data.results.length > 0) {
-                return internalResults.data.results;
-            }
-
-            const externalResults = await searchApi.search(query, { sources: 'auto', limit: 20 });
-            return externalResults.data.results;
-        } catch (error) {
-            return [];
-        }
-    },
-
-    /**
-     * Search only internal database
-     */
-    searchInternal: async (query: string, limit = 20): Promise<SearchResult[]> => {
-        try {
-            const response = await searchApi.search(query, { sources: 'internal', limit });
-            return response.data.results;
-        } catch (error) {
-            return [];
-        }
-    },
-
-    /**
-     * Search only external sources (OpenAlex + Scholar)
-     */
-    searchExternal: async (query: string, limit = 20): Promise<SearchResult[]> => {
-        try {
-            const response = await searchApi.search(query, { sources: 'auto', limit });
-            return response.data.results.filter((r) => r.source !== 'internal');
-        } catch (error) {
-            return [];
-        }
-    },
+  searchExternal: async (query: string, limit = 20): Promise<SearchResult[]> => {
+    const response = await searchApi.search(query, { sources: "all", limit });
+    return response.data.results.filter((item) => item.source !== "internal");
+  },
 };

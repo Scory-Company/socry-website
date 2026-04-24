@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { authService, type User as UserType } from "@/services"
+import { clientAuthService, type ClientUser as UserType } from "@/services"
 import { toast } from "sonner"
 import { useTheme } from "@/components/providers/ThemeProvider"
 
@@ -26,19 +26,19 @@ export default function ProfileDropdown() {
     const loadUser = async () => {
       try {
         // Check if user is authenticated first
-        if (!authService.isAuthenticated()) {
+        if (!clientAuthService.isAuthenticated()) {
           setIsLoading(false)
           return
         }
 
         // First try to get stored user
-        const storedUser = authService.getStoredUser()
+        const storedUser = clientAuthService.getStoredUser()
         if (storedUser) {
           setUser(storedUser)
         }
 
         // Then fetch fresh data from API
-        const freshUser = await authService.getProfile()
+        const freshUser = await clientAuthService.getProfile()
         if (freshUser) {
           setUser(freshUser)
         }
@@ -56,7 +56,7 @@ export default function ProfileDropdown() {
 
   const handleLogout = async () => {
     try {
-      await authService.logout()
+      await clientAuthService.logout()
       toast.success("Logged out successfully", {
         description: "You have been logged out",
       })

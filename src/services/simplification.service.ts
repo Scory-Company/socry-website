@@ -1,146 +1,114 @@
-/**
- * Simplification API Service
- * 
- * Handles PDF upload and AI-powered article simplification
- */
+import {
+  buildSimplifiedPayload,
+  createRegeneratedBlocks,
+  createRegeneratedQuizzes,
+  getMockArticleById,
+  getMockArticles,
+  mockDelay,
+  saveMockArticles,
+  toSlug,
+  updateMockArticleLevelContent,
+  updateMockArticleLevelQuizzes,
+  type ReadingLevel,
+} from "@/mocks/scory";
 
-import api from './api';
-
-export type ReadingLevel = 'SIMPLE' | 'STUDENT' | 'ACADEMIC' | 'EXPERT';
+export type { ReadingLevel };
 
 export interface SimplifyResponse {
-    success: boolean;
-    message: string;
-    data: {
-        articleId: string;
-        isNewSimplification: boolean;
-        isCached: boolean;
-        content: Array<{
-            type: string;
-            data: any;
-        }>;
-        quiz: Array<{
-            question: string;
-            options: string[];
-            correctAnswer: string;
-            explanation: string;
-        }>;
-        metadata: {
-            extractionMethod: string;
-            aiCost: number;
-            processingTime: number;
-            readingLevel: ReadingLevel;
-        };
+  success: boolean;
+  message: string;
+  data: {
+    articleId: string;
+    isNewSimplification: boolean;
+    isCached: boolean;
+    content: Array<{
+      type: string;
+      data: any;
+    }>;
+    quiz: Array<{
+      question: string;
+      options: string[];
+      correctAnswer: string;
+      explanation: string;
+    }>;
+    metadata: {
+      extractionMethod: string;
+      aiCost: number;
+      processingTime: number;
+      readingLevel: ReadingLevel;
     };
+  };
 }
 
 class SimplificationService {
-    /**
-     * Re-simplify existing article to different reading level
-     * 
-     * @param articleId - Article UUID
-     * @param readingLevel - Target reading level
-     * @param pdfUrl - Optional PDF URL if not already stored
-     */
-    async resimplifyArticle(
-        articleId: string,
-        readingLevel: ReadingLevel,
-        pdfUrl?: string
-    ): Promise<SimplifyResponse> {
-        try {
-            const response = await api.post<SimplifyResponse>(
-                `/reviewer/simplify/${articleId}/resimplify`,
-                {
-                    readingLevel,
-                    ...(pdfUrl && { pdfUrl })
-                }
-            );
-
-            return response.data;
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Failed to simplify article';
-            throw new Error(errorMessage);
-        }
+  async resimplifyArticle(articleId: string, readingLevel: ReadingLevel, pdfUrl?: string): Promise<SimplifyResponse> {
+    await mockDelay(300);
+    const article = getMockArticleById(articleId);
+    if (!article) {
+      throw new Error("Mock article not found");
     }
 
-    /**
-     * Simplify an external paper (from OpenAlex or Scholar)
-     */
-    async simplifyExternal(data: {
-        pdfUrl?: string;
-        landingPageUrl?: string;
-        title: string;
-        externalId?: string;
-        source?: string;
-        readingLevel?: ReadingLevel;
-        authors?: string[];
-        year?: number;
-    }): Promise<SimplifyResponse> {
-        try {
-            const response = await api.post<SimplifyResponse>(
-                '/reviewer/simplify/external',
-                data
-            );
-            return response.data;
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Failed to simplify external paper';
-            throw new Error(errorMessage);
-        }
+    const blocks = createRegeneratedBlocks(article, readingLevel, pdfUrl);
+    const quizzes = createRegeneratedQuizzes(readingLevel);
+    updateMockArticleLevelContent(articleId, readingLevel, blocks);
+    updateMockArticleLevelQuizzes(articleId, readingLevel, quizzes);
+    return buildSimplifiedPayload(getMockArticleById(articleId)!, readingLevel);
+  }
+
+  async simplifyExternal(data: {
+    pdfUrl?: string;
+    landingPageUrl?: string;
+    title: string;
+    externalId?: string;
+    source?: string;
+    readingLevel?: ReadingLevel;
+    authors?: string[];
+    year?: number;
+  }): Promise<SimplifyResponse> {
+    await mockDelay(300);
+    const level = data.readingLevel ?? "STUDENT";
+    const category = getMockArticles()[0]?.category;
+    const newArticleId = `external-${Math.random().toString(36).slice(2, 8)}`;
+    const article = {
+      ...getMockArticles()[0],
+      id: newArticleId,
+      slug: toSlug(data.title),
+      title: data.title,
+      excerpt: "Mock external simplification result created during frontend cleanup.",
+      authorName: data.authors?.join(", ") || "External Author",
+      category,
+      isExternal: true,
+      externalMetadata: {
+        source: (data.source === "scholar" ? "scholar" : "openalex") as "openalex" | "scholar",
+        externalId: data.externalId || newArticleId,
+        pdfUrl: data.pdfUrl,
+        landingPageUrl: data.landingPageUrl,
+        year: data.year || 2026,
+      },
+    };
+    const articles = getMockArticles();
+    articles.unshift(article);
+    saveMockArticles(articles);
+    return buildSimplifiedPayload(article, level);
+  }
+
+  async uploadPdf(file: File): Promise<string> {
+    await mockDelay(120);
+    return `mock://pdf/${encodeURIComponent(file.name)}`;
+  }
+
+  async getSimplifiedArticle(articleId: string, readingLevel: ReadingLevel, includeQuiz = true) {
+    await mockDelay();
+    const article = getMockArticleById(articleId);
+    if (!article) {
+      throw new Error("Mock article not found");
     }
-
-    /**
-     * Upload PDF file and get URL
-     * (This is a placeholder - implement based on your upload endpoint)
-     */
-    async uploadPdf(file: File): Promise<string> {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const response = await api.post<{
-                success: boolean;
-                data: {
-                    url: string;
-                    path: string;
-                }
-            }>('/upload/pdf', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            if (response.data.success && response.data.data?.url) {
-                return response.data.data.url;
-            }
-
-            throw new Error('Invalid response from upload server');
-        } catch (error: any) {
-            const message = error.response?.data?.message || 'Failed to upload PDF file';
-            throw new Error(message);
-        }
+    const payload = buildSimplifiedPayload(article, readingLevel);
+    if (!includeQuiz) {
+      payload.data.quiz = [];
     }
-
-    /**
-     * Get simplified article
-     */
-    async getSimplifiedArticle(
-        articleId: string,
-        readingLevel: ReadingLevel,
-        includeQuiz = true
-    ) {
-        try {
-            const response = await api.get(
-                `/reviewer/simplify/${articleId}`,
-                {
-                    params: { readingLevel, includeQuiz }
-                }
-            );
-
-            return response.data;
-        } catch (error: any) {
-            throw new Error('Failed to fetch simplified article');
-        }
-    }
+    return payload;
+  }
 }
 
 export const simplificationService = new SimplificationService();

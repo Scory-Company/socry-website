@@ -1,151 +1,277 @@
-import api from './api';
-
-// ============================================
-// TYPES
-// ============================================
+import { getMockArticleById, getMockArticleBySlug, getMockArticles, mockDelay, type MockContentBlock } from "@/mocks/scory";
 
 export interface ArticleListParams {
-    page?: number;
-    limit?: number;
-    category?: string;
-    topic?: string;
-    search?: string;
-    sort?: 'recent' | 'popular' | 'top_rated' | 'trending' | 'random';
-    excludeRead?: boolean;
+  page?: number;
+  limit?: number;
+  category?: string;
+  topic?: string;
+  search?: string;
+  sort?: "recent" | "popular" | "top_rated" | "trending" | "random";
+  excludeRead?: boolean;
 }
 
-// Reading Level Enum (sync with backend Prisma enum)
 export enum ReadingLevel {
-    SIMPLE = 'SIMPLE',
-    STUDENT = 'STUDENT',
-    ACADEMIC = 'ACADEMIC',
-    EXPERT = 'EXPERT',
+  SIMPLE = "SIMPLE",
+  STUDENT = "STUDENT",
+  ACADEMIC = "ACADEMIC",
+  EXPERT = "EXPERT",
 }
 
-// Content Block Types
-export type ContentBlock =
-    | { type: 'text'; data: { text: string } }
-    | { type: 'heading'; data: { text: string; level: 1 | 2 | 3 | 4 | 5 | 6 } }
-    | { type: 'quote'; data: { text: string; author?: string } }
-    | { type: 'list'; data: { style: 'bullet' | 'numbered'; items: string[] } }
-    | { type: 'image'; data: { url: string; caption?: string; alt?: string } }
-    | { type: 'infographic'; data: { url: string; caption?: string; alt?: string } }
-    | { type: 'callout'; data: { text: string; variant: 'info' | 'warning' | 'success' | 'error' } }
-    | { type: 'divider'; data: Record<string, never> };
+export type ContentBlock = MockContentBlock;
 
-// Article Content (with blocks)
 export interface ArticleContent {
-    id: string;
-    articleId: string;
-    readingLevel: ReadingLevel;
-    blocks: ContentBlock[];
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  articleId: string;
+  readingLevel: ReadingLevel;
+  blocks: ContentBlock[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ArticleResponse {
-    id: string;
-    title: string;
-    slug: string;
-    excerpt?: string;
-    imageUrl?: string;
-    authorName: string;
-    authorAvatar?: string;
-    category: { id: string; name: string; slug: string };
-    rating: number;
-    totalRatings: number;
-    viewCount: number;
-    viewCountWeek?: number;
-    readCount?: number;
-    bookmarkCount?: number;
-    readTimeMinutes: number;
-    publishedAt: string;
-    isFeatured?: boolean;
-    popularityScore?: number;
-    popularityRank?: number;
-    contents?: ArticleContent[];
-    externalMetadata?: {
-        source: 'openalex' | 'scholar';
-        externalId: string;
-        doi?: string;
-        pdfUrl?: string;
-        landingPageUrl?: string;
-        year: number;
-    };
-    isExternal?: boolean;
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  imageUrl?: string;
+  authorName: string;
+  authorAvatar?: string;
+  category: { id: string; name: string; slug: string };
+  rating: number;
+  totalRatings: number;
+  viewCount: number;
+  viewCountWeek?: number;
+  readCount?: number;
+  bookmarkCount?: number;
+  readTimeMinutes: number;
+  publishedAt: string;
+  isFeatured?: boolean;
+  popularityScore?: number;
+  popularityRank?: number;
+  contents?: ArticleContent[];
+  externalMetadata?: {
+    source: "openalex" | "scholar";
+    externalId: string;
+    doi?: string;
+    pdfUrl?: string;
+    landingPageUrl?: string;
+    year: number;
+  };
+  isExternal?: boolean;
 }
 
 export interface PaginatedResponse<T> {
-    data: {
-        articles: T[];
-        pagination: {
-            page: number;
-            limit: number;
-            total: number;
-            totalPages: number;
-        };
-        meta?: {
-            algorithm?: string;
-            timeframe?: string;
-            lastUpdated?: string;
-        };
+  data: {
+    articles: T[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
     };
-    message: string;
-    success: boolean;
+    meta?: {
+      algorithm?: string;
+      timeframe?: string;
+      lastUpdated?: string;
+    };
+  };
+  message: string;
+  success: boolean;
 }
 
 export interface SingleResponse<T> {
-    data: T;
-    message: string;
-    success: boolean;
+  data: T;
+  message: string;
+  success: boolean;
 }
 
-// ============================================
-// API FUNCTIONS
-// ============================================
+function mapArticle(article: ReturnType<typeof getMockArticles>[number]): ArticleResponse {
+  return {
+    id: article.id,
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt,
+    imageUrl: article.imageUrl,
+    authorName: article.authorName,
+    category: article.category,
+    rating: article.rating,
+    totalRatings: article.totalRatings,
+    viewCount: article.viewCount,
+    viewCountWeek: Math.round(article.viewCount * 0.25),
+    readCount: article.readCount,
+    bookmarkCount: article.bookmarkCount,
+    readTimeMinutes: article.readTimeMinutes,
+    publishedAt: article.publishedAt,
+    isFeatured: article.isFeatured,
+    popularityScore: article.viewCount + article.bookmarkCount * 5,
+    popularityRank: 0,
+    isExternal: article.isExternal,
+    externalMetadata: article.externalMetadata,
+    contents: article.contents.map((content) => ({
+      id: content.id,
+      articleId: article.id,
+      readingLevel: content.readingLevel as ReadingLevel,
+      blocks: content.blocks,
+      createdAt: article.createdAt,
+      updatedAt: article.updatedAt,
+    })),
+  };
+}
+
+function filterAndSortArticles(params?: ArticleListParams): ArticleResponse[] {
+  let items = getMockArticles()
+    .filter((article) => article.isPublished)
+    .map(mapArticle);
+
+  if (params?.category) {
+    items = items.filter((article) => article.category.name === params.category || article.category.slug === params.category);
+  }
+
+  if (params?.search) {
+    const query = params.search.toLowerCase();
+    items = items.filter((article) =>
+      [article.title, article.excerpt, article.authorName, article.category.name]
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    );
+  }
+
+  switch (params?.sort) {
+    case "popular":
+    case "trending":
+      items.sort((a, b) => b.viewCount - a.viewCount);
+      break;
+    case "top_rated":
+      items.sort((a, b) => b.rating - a.rating);
+      break;
+    case "random":
+      items = [...items].sort(() => Math.random() - 0.5);
+      break;
+    case "recent":
+    default:
+      items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      break;
+  }
+
+  return items;
+}
+
+function paginate<T>(items: T[], page = 1, limit = 12) {
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * limit;
+  return {
+    items: items.slice(start, start + limit),
+    pagination: {
+      page: currentPage,
+      limit,
+      total,
+      totalPages,
+    },
+  };
+}
 
 export const articlesApi = {
-    // Get articles list with filters
-    getArticles: (params?: ArticleListParams) =>
-        api.get<PaginatedResponse<ArticleResponse>>('/articles', { params }),
+  getArticles: async (params?: ArticleListParams): Promise<{ data: PaginatedResponse<ArticleResponse> }> => {
+    await mockDelay();
+    const limit = params?.limit ?? 12;
+    const page = params?.page ?? 1;
+    const filtered = filterAndSortArticles(params);
+    const { items, pagination } = paginate(filtered, page, limit);
+    return {
+      data: {
+        success: true,
+        message: "Mock articles loaded",
+        data: {
+          articles: items,
+          pagination,
+          meta: {
+            algorithm: "mock-store",
+            timeframe: "local",
+            lastUpdated: new Date().toISOString(),
+          },
+        },
+      },
+    };
+  },
 
-    // Get single article by slug
-    getBySlug: (slug: string) =>
-        api.get<SingleResponse<ArticleResponse>>(`/articles/${slug}`),
+  getBySlug: async (slug: string): Promise<{ data: SingleResponse<ArticleResponse> }> => {
+    await mockDelay();
+    const article = getMockArticleBySlug(slug);
+    if (!article) {
+      throw new Error("Mock article not found");
+    }
+    return {
+      data: {
+        success: true,
+        message: "Mock article loaded",
+        data: mapArticle(article),
+      },
+    };
+  },
 
-    // Get single article by ID (for simplified articles)
-    getById: (id: string) =>
-        api.get<SingleResponse<ArticleResponse>>(`/articles/by-id/${id}`),
+  getById: async (id: string): Promise<{ data: SingleResponse<ArticleResponse> }> => {
+    await mockDelay();
+    const article = getMockArticleById(id);
+    if (!article) {
+      throw new Error("Mock article not found");
+    }
+    return {
+      data: {
+        success: true,
+        message: "Mock article loaded",
+        data: mapArticle(article),
+      },
+    };
+  },
 
-    // Get article content by reading level
-    getContent: (slug: string, readingLevel: string) =>
-        api.get(`/articles/${slug}/content`, { params: { readingLevel } }),
+  getContent: async (slug: string, readingLevel: string) => {
+    await mockDelay();
+    const article = getMockArticleBySlug(slug);
+    const content = article?.contents.find((item) => item.readingLevel === readingLevel);
+    return {
+      data: {
+        success: true,
+        message: "Mock content loaded",
+        data: content ?? null,
+      },
+    };
+  },
 
-    // Get personalized "For You" feed
-    getForYou: (params?: { page?: number; limit?: number; excludeRead?: boolean; sort?: string; readingLevel?: string }) =>
-        api.get<PaginatedResponse<ArticleResponse>>('/articles/for-you', { params }),
+  getForYou: async (params?: { page?: number; limit?: number; excludeRead?: boolean; sort?: string; readingLevel?: string }) =>
+    articlesApi.getArticles({
+      page: params?.page,
+      limit: params?.limit,
+      sort: (params?.sort as ArticleListParams["sort"]) ?? "recent",
+    }),
 
-    // Get popular articles
-    getPopular: (params?: { page?: number; limit?: number; timeframe?: '7d' | '30d' | 'all' }) =>
-        api.get<PaginatedResponse<ArticleResponse>>('/articles/popular', {
-            params
-        }),
+  getPopular: async (params?: { page?: number; limit?: number; timeframe?: "7d" | "30d" | "all" }) =>
+    articlesApi.getArticles({
+      page: params?.page,
+      limit: params?.limit,
+      sort: "popular",
+    }),
 
-    // Get top rated articles
-    getTopRated: (params?: { page?: number; limit?: number }) =>
-        api.get<PaginatedResponse<ArticleResponse>>('/articles', {
-            params: { ...params, sort: 'top_rated' }
-        }),
+  getTopRated: async (params?: { page?: number; limit?: number }) =>
+    articlesApi.getArticles({
+      page: params?.page,
+      limit: params?.limit,
+      sort: "top_rated",
+    }),
 
-    // Get trending articles (this week)
-    getTrending: (params?: { page?: number; limit?: number }) =>
-        api.get<PaginatedResponse<ArticleResponse>>('/articles', {
-            params: { ...params, sort: 'trending' }
-        }),
+  getTrending: async (params?: { page?: number; limit?: number }) =>
+    articlesApi.getArticles({
+      page: params?.page,
+      limit: params?.limit,
+      sort: "trending",
+    }),
 
-    // Get recent articles
-    getRecent: (params?: { page?: number; limit?: number }) =>
-        api.get<PaginatedResponse<ArticleResponse>>('/articles', {
-            params: { ...params, sort: 'recent' }
-        }),
+  getRecent: async (params?: { page?: number; limit?: number }) =>
+    articlesApi.getArticles({
+      page: params?.page,
+      limit: params?.limit,
+      sort: "recent",
+    }),
 };
