@@ -16,12 +16,32 @@ export type TitleAnalysisSection = {
   points: string[]
 }
 
+export type TitleAnalysisMetric = {
+  label: string
+  value: number
+  helper: string
+  tone: "neutral" | "positive" | "warning"
+}
+
+export type TitleAnalysisScopeSuggestion = {
+  label: string
+  value: string
+}
+
 export type TitleAnalysisResult = {
   title: string
   summary: string
   verdict: TitleAnalysisVerdict
   verdictReason: string
+  confidenceScore: number
+  refinedTitleSuggestion: string
+  keyTakeaway: string
+  metrics: TitleAnalysisMetric[]
   nodes: TitleAnalysisNode[]
+  keywords: string[]
+  researchQuestions: string[]
+  searchQueries: string[]
+  scopeSuggestions: TitleAnalysisScopeSuggestion[]
   sections: TitleAnalysisSection[]
   suggestedActions: string[]
   historyLabel: string
@@ -114,6 +134,50 @@ function pickMethod(title: string) {
   return "Method should follow the exact research question"
 }
 
+function pickOutcome(title: string, terms: string[]) {
+  const lowered = title.toLowerCase()
+
+  if (lowered.includes("learning")) return "learning outcomes"
+  if (lowered.includes("performance")) return "performance improvement"
+  if (lowered.includes("satisfaction")) return "user satisfaction"
+  if (lowered.includes("adoption")) return "adoption behavior"
+  if (lowered.includes("perception")) return "user perception"
+  if (lowered.includes("effectiveness")) return "effectiveness"
+
+  return terms[3] ? toTitleCase(terms[3]).toLowerCase() : "the main outcome"
+}
+
+function buildMetricScores(title: string, terms: string[], context: string, verdict: TitleAnalysisVerdict) {
+  const lowered = title.toLowerCase()
+  const hasExplicitContext = context !== "Context is still broad"
+  const hasCausalClaim = lowered.includes("impact") || lowered.includes("effect")
+  const hasMethodCue =
+    lowered.includes("survey") ||
+    lowered.includes("case study") ||
+    lowered.includes("qualitative") ||
+    lowered.includes("quantitative") ||
+    lowered.includes("mixed")
+
+  const specificity = Math.min(94, 38 + terms.length * 8 + (hasExplicitContext ? 14 : 0) + (hasMethodCue ? 8 : 0))
+  const feasibility = Math.max(42, 84 - (hasCausalClaim ? 16 : 0) - (title.length > 110 ? 10 : 0) + (hasExplicitContext ? 6 : 0))
+  const literatureFit = Math.min(92, 56 + terms.length * 5 + (hasExplicitContext ? 7 : 0))
+  const readiness =
+    verdict === "Good to Continue" ? 82 : verdict === "Needs Refinement" ? 64 : 45
+
+  return {
+    specificity,
+    feasibility,
+    literatureFit,
+    readiness,
+  }
+}
+
+function scoreTone(value: number): TitleAnalysisMetric["tone"] {
+  if (value >= 75) return "positive"
+  if (value >= 55) return "neutral"
+  return "warning"
+}
+
 function assessVerdict(title: string, terms: string[]): {
   verdict: TitleAnalysisVerdict
   reason: string
@@ -192,6 +256,76 @@ function buildNextSteps(verdict: TitleAnalysisVerdict) {
   return points
 }
 
+function buildKeywords(topic: string, context: string, terms: string[]) {
+  const normalizedTerms = terms
+    .filter((term, index, list) => list.indexOf(term) === index)
+    .slice(0, 6)
+    .map(toTitleCase)
+
+  const contextKeyword = context === "Context is still broad" ? null : context
+  return [topic, ...normalizedTerms, contextKeyword, "Research Gap", "Literature Review"]
+    .filter(Boolean)
+    .filter((item, index, list) => list.indexOf(item) === index) as string[]
+}
+
+function buildResearchQuestions(topic: string, context: string, outcome: string) {
+  const contextPhrase = context === "Context is still broad" ? "the selected research context" : context.toLowerCase()
+
+  return [
+    `How is ${topic.toLowerCase()} currently understood in ${contextPhrase}?`,
+    `What factors connect ${topic.toLowerCase()} with ${outcome} in ${contextPhrase}?`,
+    `What gap remains in recent studies about ${topic.toLowerCase()} within ${contextPhrase}?`,
+  ]
+}
+
+function buildSearchQueries(topic: string, context: string, outcome: string) {
+  const contextPhrase = context === "Context is still broad" ? "" : ` ${context.toLowerCase()}`
+
+  return [
+    `"${topic}"${contextPhrase} systematic review`,
+    `"${topic}" ${outcome} recent journal articles`,
+    `"${topic}" research gap${contextPhrase}`,
+  ].map((query) => query.replace(/\s+/g, " ").trim())
+}
+
+function buildScopeSuggestions(topic: string, context: string, method: string, outcome: string) {
+  return [
+    {
+      label: "Focus",
+      value: topic,
+    },
+    {
+      label: "Context",
+      value: context,
+    },
+    {
+      label: "Outcome",
+      value: toTitleCase(outcome),
+    },
+    {
+      label: "Possible Method",
+      value: method,
+    },
+  ]
+}
+
+function buildRefinedTitle(topic: string, context: string, outcome: string) {
+  const contextPhrase = context === "Context is still broad" ? "a Specific Research Context" : context
+  return `${topic} and ${toTitleCase(outcome)} in ${contextPhrase}: A Focused Research Mapping`
+}
+
+function buildKeyTakeaway(verdict: TitleAnalysisVerdict, topic: string, context: string) {
+  if (verdict === "Good to Continue") {
+    return `The title is workable. Keep ${topic.toLowerCase()} as the main anchor, then validate the gap with recent literature in ${context.toLowerCase()}.`
+  }
+
+  if (verdict === "Needs Refinement") {
+    return `The idea is promising, but it needs a sharper scope before literature search. Start by narrowing the population, outcome, or context.`
+  }
+
+  return "The title still reads too generic. Rebuild it around one topic, one context, and one measurable outcome before moving deeper."
+}
+
 function shortenHistoryLabel(title: string) {
   const clean = title.replace(/\s+/g, " ").trim()
   if (clean.length <= 42) return `Title Analysis: ${clean}`
@@ -205,7 +339,9 @@ export function buildTitleAnalysis(title: string): TitleAnalysisResult {
   const variables = pickVariables(cleanTitle, terms)
   const context = pickContext(cleanTitle)
   const method = pickMethod(cleanTitle)
+  const outcome = pickOutcome(cleanTitle, terms)
   const { verdict, reason } = assessVerdict(cleanTitle, terms)
+  const scores = buildMetricScores(cleanTitle, terms, context, verdict)
   const gapValue =
     verdict === "Good to Continue"
       ? "There is room to sharpen the angle with more specific recent evidence"
@@ -222,6 +358,35 @@ export function buildTitleAnalysis(title: string): TitleAnalysisResult {
     summary: `Scory reads this as a study about ${topic.toLowerCase()} with a focus on ${context.toLowerCase()}.`,
     verdict,
     verdictReason: reason,
+    confidenceScore: Math.round((scores.specificity + scores.feasibility + scores.literatureFit + scores.readiness) / 4),
+    refinedTitleSuggestion: buildRefinedTitle(topic, context, outcome),
+    keyTakeaway: buildKeyTakeaway(verdict, topic, context),
+    metrics: [
+      {
+        label: "Readiness",
+        value: scores.readiness,
+        helper: "How ready the title is to move into literature checking.",
+        tone: scoreTone(scores.readiness),
+      },
+      {
+        label: "Specificity",
+        value: scores.specificity,
+        helper: "How clearly the title shows focus, variables, and context.",
+        tone: scoreTone(scores.specificity),
+      },
+      {
+        label: "Feasibility",
+        value: scores.feasibility,
+        helper: "How realistic the claim looks for a student research workflow.",
+        tone: scoreTone(scores.feasibility),
+      },
+      {
+        label: "Literature Fit",
+        value: scores.literatureFit,
+        helper: "How searchable the topic looks for related papers.",
+        tone: scoreTone(scores.literatureFit),
+      },
+    ],
     nodes: [
       { id: "topic", label: "Topic", value: topic, tone: "neutral", section: "about" },
       { id: "variables", label: "Variables", value: variables, tone: "neutral", section: "about" },
@@ -230,6 +395,10 @@ export function buildTitleAnalysis(title: string): TitleAnalysisResult {
       { id: "gap", label: "Gap", value: gapValue, tone: "positive", section: "gaps" },
       { id: "positioning", label: "Positioning", value: positioningValue, tone: "warning", section: "weaknesses" },
     ],
+    keywords: buildKeywords(topic, context, terms),
+    researchQuestions: buildResearchQuestions(topic, context, outcome),
+    searchQueries: buildSearchQueries(topic, context, outcome),
+    scopeSuggestions: buildScopeSuggestions(topic, context, method, outcome),
     sections: [
       {
         key: "about",
