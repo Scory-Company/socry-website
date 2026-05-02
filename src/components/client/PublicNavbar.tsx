@@ -176,7 +176,7 @@ export default function PublicNavbar({
                 <>
                   {/* Get Started — desktop only */}
                   <Link
-                    href="/workspace"
+                    href="/early-access"
                     className="hidden items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark-shade md:flex"
                   >
                     Get Started
@@ -296,7 +296,7 @@ export default function PublicNavbar({
 
               {showAuthButtons && (
                 <Link
-                  href="/workspace"
+                  href="/early-access"
                   onClick={() => setMenuOpen(false)}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark-shade"
                 >

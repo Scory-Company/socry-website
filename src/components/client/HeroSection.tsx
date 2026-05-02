@@ -5,23 +5,19 @@ import { useRouter } from "next/navigation"
 import { Search, ArrowRight, FileText, Brain, BookOpen, Star, StarHalf } from "lucide-react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
-import LoginDialog from "@/components/client/LoginDialog"
-import { clientAuthService } from "@/services"
 
 export default function HeroSection() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
 
-  const goToWorkspace = (query: string) => {
+  const goToEarlyAccess = (query: string) => {
     const trimmedQuery = query.trim()
     const params = new URLSearchParams()
     if (trimmedQuery) {
-      params.set("prompt", trimmedQuery)
-      params.set("autorun", "1")
+      params.set("intent", trimmedQuery)
     }
 
-    const target = params.size ? `/workspace?${params.toString()}` : "/workspace"
+    const target = params.size ? `/early-access?${params.toString()}` : "/early-access"
     router.push(target)
   }
 
@@ -32,27 +28,12 @@ export default function HeroSection() {
       return
     }
 
-    if (!clientAuthService.isAuthenticated()) {
-      setIsLoginDialogOpen(true)
-      return
-    }
-
-    goToWorkspace(searchQuery)
+    goToEarlyAccess(searchQuery)
   }
 
   const handlePopularSearch = (query: string) => {
     setSearchQuery(query)
-    if (!clientAuthService.isAuthenticated()) {
-      setIsLoginDialogOpen(true)
-      return
-    }
-
-    goToWorkspace(query)
-  }
-
-  const handleLoginSuccess = () => {
-    setIsLoginDialogOpen(false)
-    goToWorkspace(searchQuery)
+    goToEarlyAccess(query)
   }
 
   return (
@@ -213,13 +194,14 @@ export default function HeroSection() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="What are you researching?"
-              className="flex-1 py-2 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
+              className="min-w-0 flex-1 py-2 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
             />
             <button
               type="submit"
               className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-full transition-all"
             >
-              Explore
+              <span className="hidden sm:inline">Join Early Access</span>
+              <span className="sm:hidden">Join</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -258,13 +240,6 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      <LoginDialog
-        open={isLoginDialogOpen}
-        onOpenChange={setIsLoginDialogOpen}
-        onLoginSuccess={handleLoginSuccess}
-        initialMode="login"
-        redirectTo={null}
-      />
     </section>
   )
 }
